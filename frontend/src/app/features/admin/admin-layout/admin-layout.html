@@ -40,8 +40,17 @@
             Talleres Mecánicos
           </a>
         </li>
+        <li>
+          <a routerLink="/admin/vehiculos" routerLinkActive="bg-blue-800 border-l-4 border-amber-500 text-white" (click)="closeSidebar()" [routerLinkActiveOptions]="{exact: true}"
+             class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors">
+            <svg class="w-5 h-5 mr-3 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L9 7h10l-4 4-4-4H5z" /></svg>
+            Catálogo de Vehículos
+          </a>
+        </li>
       </ul>
     </div>
+
+    
 
     <div class="p-4 border-t border-blue-800">
       <button (click)="cerrarSesion()" class="flex items-center w-full px-3 py-2 text-sm font-medium text-blue-200 hover:text-white transition-colors">
