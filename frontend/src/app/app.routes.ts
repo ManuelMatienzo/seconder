@@ -8,6 +8,7 @@ import { Talleres } from './features/admin/talleres/talleres';
 import { CatalogoVehiculos } from './features/admin/catalogo-vehiculos/catalogo-vehiculos';
 import { TallerLayout } from './features/taller/taller-layout/taller-layout';
 import { TallerDashboard } from './features/taller/taller-dashboard/taller-dashboard';
+import { TallerHistorial } from './features/taller/taller-historial/taller-historial';
 
 export const routes: Routes = [
   { path: 'login', component: Login },
@@ -29,6 +30,7 @@ export const routes: Routes = [
     children: [
       // Aquí irán las rutas hijas en el siguiente paso
       { path: 'dashboard', component: TallerDashboard },
+      { path: 'historial', component: TallerHistorial },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },

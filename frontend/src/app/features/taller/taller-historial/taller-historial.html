@@ -1,0 +1,63 @@
+<div class="space-y-6 max-w-5xl mx-auto font-sans">
+  
+  <div class="flex items-center justify-between">
+    <div>
+      <h2 class="text-lg font-semibold text-gray-900">Historial de Servicios</h2>
+      <p class="text-sm text-gray-500 mt-1">Registro y trazabilidad de todas las asistencias realizadas.</p>
+    </div>
+    <div class="px-3 py-1.5 bg-gray-100 border-[1.5px] border-gray-200 rounded-lg">
+      <span class="text-xs font-mono font-bold tracking-wider text-gray-600 uppercase">CU-08: Trazabilidad</span>
+    </div>
+  </div>
+
+  <div class="bg-white border-[1.5px] border-gray-200 rounded-xl overflow-hidden shadow-sm">
+    
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50 justify-between items-center hidden sm:flex">
+      <span class="text-[10px] font-mono font-bold text-gray-500 uppercase tracking-widest">Detalles del Servicio</span>
+      <span class="text-[10px] font-mono font-bold text-gray-500 uppercase tracking-widest text-right">Estado y Monto</span>
+    </div>
+
+    <div class="divide-y divide-gray-100">
+      @for (servicio of historial(); track servicio.id) {
+        <div class="p-5 hover:bg-gray-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          
+          <div class="flex items-start gap-4 min-w-0">
+            <div class="w-10 h-10 rounded-full bg-blue-50 border-[1.5px] border-blue-100 flex items-center justify-center flex-shrink-0 mt-1">
+              <svg class="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-mono text-xs font-bold text-gray-900">{{ servicio.id }}</span>
+                <span class="text-gray-300">•</span>
+                <span class="text-xs text-gray-500 font-medium">{{ servicio.fecha }}</span>
+              </div>
+              <h4 class="text-sm font-semibold text-gray-900 truncate">{{ servicio.tipoEmergencia }}</h4>
+              <p class="text-sm text-gray-600 mt-0.5 truncate">{{ servicio.cliente }} — <span class="font-mono text-[11px]">{{ servicio.vehiculo }}</span></p>
+              
+              <div class="mt-2.5 flex items-start gap-2">
+                <svg class="w-4 h-4 text-blue-700 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <p class="text-xs text-gray-500 leading-relaxed max-w-xl">{{ servicio.diagnosticoIA }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-row sm:flex-col items-center sm:items-end justify-between gap-2 flex-shrink-0 border-t border-gray-100 sm:border-0 pt-3 sm:pt-0">
+            @if (servicio.estado === 'Completado') {
+              <span class="px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase border-[1.5px] border-green-200">
+                Completado
+              </span>
+              <span class="text-lg font-bold text-gray-900 mt-1">Bs. {{ servicio.costo }}</span>
+            } @else {
+              <span class="px-2.5 py-1 bg-red-100 text-red-700 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase border-[1.5px] border-red-200">
+                Cancelado
+              </span>
+              <span class="text-sm font-medium text-gray-400 mt-1 line-through">Bs. 0.00</span>
+            }
+          </div>
+
+        </div>
+      }
+    </div>
+  </div>
+</div>
