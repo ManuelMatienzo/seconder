@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core'; // Añadimos signal
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
-
+//yea
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
