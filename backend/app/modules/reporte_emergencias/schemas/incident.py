@@ -35,6 +35,10 @@ class IncidentCreateRequest(ORMBaseModel):
     )
 
 
+class IncidentDescriptionUpdateRequest(ORMBaseModel):
+    description_text: str = Field(min_length=1)
+
+
 class IncidentPhotoResponse(ORMBaseModel):
     id_photo: int
     id_incident: int

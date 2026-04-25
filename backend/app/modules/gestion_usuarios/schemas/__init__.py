@@ -3,6 +3,12 @@ from app.modules.gestion_usuarios.schemas.client import ClientRegisterRequest, C
 from app.modules.gestion_usuarios.schemas.role import RoleResponse
 from app.modules.gestion_usuarios.schemas.user import UserResponse
 from app.modules.gestion_usuarios.schemas.vehicle import VehicleCreateRequest, VehicleResponse
+from app.modules.gestion_usuarios.schemas.workshop import (
+    WorkshopResponse,
+    WorkshopTestRegisterRequest,
+    WorkshopTestRegisterResponse,
+    WorkshopUpsertRequest,
+)
 
 __all__ = [
     "ClientRegisterRequest",
@@ -14,4 +20,8 @@ __all__ = [
     "UserResponse",
     "VehicleCreateRequest",
     "VehicleResponse",
+    "WorkshopResponse",
+    "WorkshopTestRegisterRequest",
+    "WorkshopTestRegisterResponse",
+    "WorkshopUpsertRequest",
 ]

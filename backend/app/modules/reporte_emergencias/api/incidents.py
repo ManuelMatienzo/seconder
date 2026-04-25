@@ -3,8 +3,16 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models import Client
-from app.modules.reporte_emergencias.schemas import IncidentCreateRequest, IncidentResponse
-from app.modules.reporte_emergencias.services import create_incident, get_incident_by_id
+from app.modules.reporte_emergencias.schemas import (
+    IncidentCreateRequest,
+    IncidentDescriptionUpdateRequest,
+    IncidentResponse,
+)
+from app.modules.reporte_emergencias.services import (
+    create_incident,
+    get_incident_by_id,
+    update_incident_description,
+)
 from app.shared.dependencies.auth import get_current_client, get_incident_owned_by_current_client
 
 router = APIRouter(prefix="/incidents", tags=["Incidents"])
@@ -50,3 +58,22 @@ def get_incident(
     get_incident_owned_by_current_client(db, current_client, incident_id)
     incident = get_incident_by_id(db, incident_id)
     return incident
+
+
+@router.patch(
+    "/{incident_id}/description",
+    response_model=IncidentResponse,
+    responses=protected_incident_responses,
+)
+def patch_incident_description(
+    incident_id: int,
+    data: IncidentDescriptionUpdateRequest,
+    current_client: Client = Depends(get_current_client),
+    db: Session = Depends(get_db),
+) -> IncidentResponse:
+    get_incident_owned_by_current_client(db, current_client, incident_id)
+
+    try:
+        return update_incident_description(db, incident_id, data)
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc

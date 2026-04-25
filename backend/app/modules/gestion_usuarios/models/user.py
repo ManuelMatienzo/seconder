@@ -21,3 +21,4 @@ class User(Base):
 
     role = relationship("Role", back_populates="users")
     client = relationship("Client", back_populates="user", uselist=False)
+    workshop = relationship("Workshop", back_populates="user", uselist=False)

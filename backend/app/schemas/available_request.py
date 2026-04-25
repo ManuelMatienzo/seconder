@@ -1,18 +1,11 @@
-
 from app.modules.asignacion_operaciones.schemas.available_request import (
     AvailableRequestAiDataResponse,
     AvailableRequestResponse,
     AvailableRequestVehicleResponse,
-)
-from app.modules.asignacion_operaciones.schemas.assignment_decision import (
-    AssignmentDecisionRequest,
-    AssignmentDecisionResponse,
 )
 
 __all__ = [
     "AvailableRequestAiDataResponse",
     "AvailableRequestResponse",
     "AvailableRequestVehicleResponse",
-    "AssignmentDecisionRequest",
-    "AssignmentDecisionResponse",
 ]

@@ -6,6 +6,7 @@ from app.models import Incident, IncidentAudio, IncidentPhoto, Vehicle
 from app.modules.reporte_emergencias.schemas import (
     IncidentAudioCreateRequest,
     IncidentCreateRequest,
+    IncidentDescriptionUpdateRequest,
     IncidentPhotoCreateRequest,
 )
 
@@ -64,6 +65,21 @@ def get_incident_by_id(db: Session, incident_id: int) -> Incident | None:
         .options(selectinload(Incident.photos), selectinload(Incident.audios))
         .where(Incident.id_incident == incident_id)
     )
+
+
+def update_incident_description(
+    db: Session,
+    incident_id: int,
+    data: IncidentDescriptionUpdateRequest,
+) -> Incident:
+    incident = db.get(Incident, incident_id)
+    if not incident:
+        raise LookupError("Incidente no encontrado")
+
+    incident.description_text = data.description_text
+    db.commit()
+
+    return get_incident_by_id(db, incident_id) or incident
 
 
 def create_incident_photo(db: Session, data: IncidentPhotoCreateRequest) -> IncidentPhoto:

@@ -3,7 +3,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models import Client, Incident, User, Vehicle
+from app.models import Client, Incident, User, Vehicle, Workshop
 from app.shared.security.security import decode_access_token
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -83,3 +83,30 @@ def get_incident_owned_by_current_client(db: Session, current_client: Client, in
         )
 
     return incident
+
+
+def get_current_workshop_user(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> User:
+    role_name = current_user.role.name.lower() if current_user.role and current_user.role.name else ""
+    workshop = db.get(Workshop, current_user.id_user)
+
+    if role_name in {"taller", "workshop"} or workshop is not None:
+        return current_user
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="El usuario autenticado no tiene permisos de taller",
+    )
+
+
+def get_current_workshop(
+    current_user: User = Depends(get_current_workshop_user),
+    db: Session = Depends(get_db),
+) -> Workshop:
+    workshop = db.get(Workshop, current_user.id_user)
+    if not workshop:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Taller no encontrado")
+
+    return workshop
