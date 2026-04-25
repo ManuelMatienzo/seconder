@@ -85,14 +85,22 @@ def get_incident_owned_by_current_client(db: Session, current_client: Client, in
     return incident
 
 
+def is_workshop_user(current_user: User, db: Session) -> bool:
+    role_name = current_user.role.name.lower() if current_user.role and current_user.role.name else ""
+    workshop = db.get(Workshop, current_user.id_user)
+    return role_name in {"taller", "workshop"} or workshop is not None
+
+
+def is_admin_user(current_user: User) -> bool:
+    role_name = current_user.role.name.lower() if current_user.role and current_user.role.name else ""
+    return role_name in {"admin", "administrador"}
+
+
 def get_current_workshop_user(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> User:
-    role_name = current_user.role.name.lower() if current_user.role and current_user.role.name else ""
-    workshop = db.get(Workshop, current_user.id_user)
-
-    if role_name in {"taller", "workshop"} or workshop is not None:
+    if is_workshop_user(current_user, db):
         return current_user
 
     raise HTTPException(
@@ -110,3 +118,16 @@ def get_current_workshop(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Taller no encontrado")
 
     return workshop
+
+
+def get_current_operations_user(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> User:
+    if is_admin_user(current_user) or is_workshop_user(current_user, db):
+        return current_user
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="El usuario autenticado no tiene permisos operativos para ejecutar el motor de asignacion",
+    )

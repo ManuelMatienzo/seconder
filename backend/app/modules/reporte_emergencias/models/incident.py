@@ -24,3 +24,4 @@ class Incident(Base):
     vehicle = relationship("Vehicle", back_populates="incidents")
     photos = relationship("IncidentPhoto", back_populates="incident")
     audios = relationship("IncidentAudio", back_populates="incident")
+    ai_analysis = relationship("AiAnalysis", back_populates="incident", uselist=False)
