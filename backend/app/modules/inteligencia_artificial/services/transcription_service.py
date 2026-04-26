@@ -1,22 +1,69 @@
+import os
+import tempfile
+from urllib.parse import urlparse
+from urllib.request import urlopen
+
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.config import settings
 from app.models import AiAnalysis, Client, Incident, IncidentAudio, User
+from app.modules.inteligencia_artificial.providers.stt import build_mock_transcription, transcribe_file_with_groq
+from app.modules.inteligencia_artificial.providers.stt.groq_stt import GroqTranscriptionError
 from app.shared.dependencies.auth import is_workshop_user
 
 MOCK_MODEL_VERSION = "mock-v1"
 DEFAULT_PRIORITY_LEVEL = "media"
 
 
-def build_mock_transcription(incident: Incident, audio: IncidentAudio) -> str:
-    audio_format = audio.format or "desconocido"
-    duration = f"{audio.duration_seconds} segundos" if audio.duration_seconds is not None else "duracion no especificada"
-    return (
-        f"Transcripcion simulada del incidente {incident.id_incident}. "
-        f"Audio {audio.id_audio} en formato {audio_format}, {duration}. "
-        f"Fuente registrada: {audio.file_url}."
-    )
+class TranscriptionProviderError(RuntimeError):
+    pass
+
+
+def download_audio_temporarily(audio: IncidentAudio) -> str:
+    parsed_url = urlparse(audio.file_url)
+    suffix = os.path.splitext(parsed_url.path)[1]
+    if not suffix:
+        suffix = f".{audio.format}" if audio.format else ".bin"
+
+    try:
+        with urlopen(audio.file_url, timeout=30) as response:
+            audio_bytes = response.read()
+    except Exception as exc:
+        raise TranscriptionProviderError("No se pudo descargar el audio asociado al incidente") from exc
+
+    if not audio_bytes:
+        raise TranscriptionProviderError("El archivo de audio descargado esta vacio")
+
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    try:
+        temp_file.write(audio_bytes)
+        temp_file.flush()
+    finally:
+        temp_file.close()
+
+    return temp_file.name
+
+
+def transcribe_with_selected_provider(incident: Incident, audio: IncidentAudio) -> tuple[str, str]:
+    provider = settings.TRANSCRIPTION_PROVIDER.strip().lower()
+
+    if provider != "groq":
+        return build_mock_transcription(incident, audio), MOCK_MODEL_VERSION
+
+    local_audio_path = download_audio_temporarily(audio)
+    try:
+        return transcribe_file_with_groq(local_audio_path)
+    except GroqTranscriptionError as exc:
+        if settings.ALLOW_TRANSCRIPTION_FALLBACK:
+            return build_mock_transcription(incident, audio), MOCK_MODEL_VERSION
+        raise TranscriptionProviderError(str(exc)) from exc
+    finally:
+        try:
+            os.remove(local_audio_path)
+        except OSError:
+            pass
 
 
 def transcribe_incident_audio(db: Session, incident_id: int, current_user: User) -> dict:
@@ -59,8 +106,9 @@ def transcribe_incident_audio(db: Session, incident_id: int, current_user: User)
         )
         db.add(ai_analysis)
 
-    ai_analysis.audio_transcription = build_mock_transcription(incident, latest_audio)
-    ai_analysis.model_version = MOCK_MODEL_VERSION
+    transcription_text, model_version = transcribe_with_selected_provider(incident, latest_audio)
+    ai_analysis.audio_transcription = transcription_text
+    ai_analysis.model_version = model_version
 
     try:
         db.commit()

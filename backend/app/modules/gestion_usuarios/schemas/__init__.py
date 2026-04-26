@@ -5,8 +5,6 @@ from app.modules.gestion_usuarios.schemas.user import UserResponse
 from app.modules.gestion_usuarios.schemas.vehicle import VehicleCreateRequest, VehicleResponse
 from app.modules.gestion_usuarios.schemas.workshop import (
     WorkshopResponse,
-    WorkshopTestRegisterRequest,
-    WorkshopTestRegisterResponse,
     WorkshopUpsertRequest,
 )
 
@@ -21,7 +19,5 @@ __all__ = [
     "VehicleCreateRequest",
     "VehicleResponse",
     "WorkshopResponse",
-    "WorkshopTestRegisterRequest",
-    "WorkshopTestRegisterResponse",
     "WorkshopUpsertRequest",
 ]

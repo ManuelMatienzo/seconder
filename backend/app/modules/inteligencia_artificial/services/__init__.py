@@ -1,5 +1,16 @@
 
-from app.modules.inteligencia_artificial.services.classification_service import classify_incident_photo
-from app.modules.inteligencia_artificial.services.transcription_service import transcribe_incident_audio
+from app.modules.inteligencia_artificial.services.classification_service import (
+    ClassificationProviderError,
+    classify_incident_photo,
+)
+from app.modules.inteligencia_artificial.services.transcription_service import (
+    TranscriptionProviderError,
+    transcribe_incident_audio,
+)
 
-__all__ = ["classify_incident_photo", "transcribe_incident_audio"]
+__all__ = [
+    "ClassificationProviderError",
+    "classify_incident_photo",
+    "TranscriptionProviderError",
+    "transcribe_incident_audio",
+]

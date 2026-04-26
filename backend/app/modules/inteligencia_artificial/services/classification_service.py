@@ -2,26 +2,32 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.config import settings
 from app.models import AiAnalysis, Client, Incident, IncidentPhoto, User
+from app.modules.inteligencia_artificial.providers.vision import build_mock_classification, classify_image_with_groq_vision
+from app.modules.inteligencia_artificial.providers.vision.groq_vision import GroqVisionError
 from app.shared.dependencies.auth import is_workshop_user
 
 MOCK_VISION_MODEL_VERSION = "mock-vision-v1"
 DEFAULT_PRIORITY_LEVEL = "media"
 
 
-def build_mock_classification(photo: IncidentPhoto) -> str:
-    photo_context = f"{photo.file_url} {photo.format or ''}".lower()
+class ClassificationProviderError(RuntimeError):
+    pass
 
-    if any(keyword in photo_context for keyword in ("llanta", "neumatic", "tire", "rueda", "pinch")):
-        return "neumatico"
-    if any(keyword in photo_context for keyword in ("bateria", "electr", "cable", "luz", "alternador")):
-        return "problema electrico"
-    if any(keyword in photo_context for keyword in ("golpe", "choque", "aboll", "paracho", "puerta", "exterior")):
-        return "danio exterior"
-    if any(keyword in photo_context for keyword in ("motor", "mecan", "aceite", "humo", "radiador")):
-        return "falla mecanica"
 
-    return "incidente no clasificado"
+def classify_with_selected_provider(photo: IncidentPhoto) -> tuple[str, str]:
+    provider = settings.CLASSIFICATION_PROVIDER.strip().lower()
+
+    if provider != "groq":
+        return build_mock_classification(photo), MOCK_VISION_MODEL_VERSION
+
+    try:
+        return classify_image_with_groq_vision(photo.file_url)
+    except GroqVisionError as exc:
+        if settings.ALLOW_CLASSIFICATION_FALLBACK:
+            return build_mock_classification(photo), MOCK_VISION_MODEL_VERSION
+        raise ClassificationProviderError(str(exc)) from exc
 
 
 def classify_incident_photo(db: Session, incident_id: int, current_user: User) -> dict:
@@ -64,8 +70,9 @@ def classify_incident_photo(db: Session, incident_id: int, current_user: User) -
         )
         db.add(ai_analysis)
 
-    ai_analysis.classification = build_mock_classification(latest_photo)
-    ai_analysis.model_version = MOCK_VISION_MODEL_VERSION
+    classification, model_version = classify_with_selected_provider(latest_photo)
+    ai_analysis.classification = classification
+    ai_analysis.model_version = model_version
 
     try:
         db.commit()
