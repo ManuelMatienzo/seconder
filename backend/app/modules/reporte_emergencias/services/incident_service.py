@@ -9,6 +9,7 @@ from app.modules.reporte_emergencias.schemas import (
     IncidentDescriptionUpdateRequest,
     IncidentPhotoCreateRequest,
 )
+from app.services.ai_service import AIService
 
 
 def create_incident(db: Session, client_id: int, data: IncidentCreateRequest) -> Incident:
@@ -51,8 +52,10 @@ def create_incident(db: Session, client_id: int, data: IncidentCreateRequest) ->
         )
 
     try:
+        db.flush()
+        AIService().process_incident(db, incident)
         db.commit()
-    except IntegrityError as exc:
+    except (IntegrityError, ValueError) as exc:
         db.rollback()
         raise ValueError("No se pudo registrar el incidente con los datos enviados") from exc
 

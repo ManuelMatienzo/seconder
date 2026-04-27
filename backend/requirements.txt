@@ -9,6 +9,7 @@ ecdsa==0.19.2
 email-validator==2.3.0
 fastapi==0.136.0
 greenlet==3.4.0
+groq==0.26.0
 h11==0.16.0
 idna==3.11
 openai==2.32.0

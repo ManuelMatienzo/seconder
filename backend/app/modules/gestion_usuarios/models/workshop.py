@@ -20,3 +20,4 @@ class Workshop(Base):
     rating: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     user = relationship("User", back_populates="workshop")
+    technicians = relationship("Technician", back_populates="workshop")
