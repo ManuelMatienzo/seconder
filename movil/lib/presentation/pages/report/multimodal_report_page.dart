@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -13,7 +14,8 @@ import 'package:movil/core/widgets/custom_input.dart';
 import 'package:movil/presentation/providers/report_provider.dart';
 
 class MultimodalReportPage extends StatefulWidget {
-  const MultimodalReportPage({super.key});
+  const MultimodalReportPage({super.key, required this.currentPosition});
+  final Position currentPosition;
 
   @override
   State<MultimodalReportPage> createState() => _MultimodalReportPageState();
@@ -60,8 +62,9 @@ class _MultimodalReportPageState extends State<MultimodalReportPage> {
         setState(() => _imageFile = File(photo.path));
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         _showErrorSnackBar('No se pudo acceder a la cámara o galería.');
+      }
     } finally {
       if (mounted) setState(() => _isPickingImage = false);
     }

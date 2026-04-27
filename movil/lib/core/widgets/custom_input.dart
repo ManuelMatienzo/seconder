@@ -61,7 +61,7 @@ class CustomInput extends StatelessWidget {
         labelText: labelText,
         hintText: hintText,
         filled: true,
-        fillColor: AppColors.white,
+        fillColor: AppColors.background,
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
         contentPadding: const EdgeInsets.symmetric(

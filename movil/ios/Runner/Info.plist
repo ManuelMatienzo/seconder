@@ -4,6 +4,8 @@
 <dict>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>MechSmart necesita acceso al micrófono para grabar la nota de voz del reporte de emergencia.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>MechSmart necesita acceso a tu ubicación para asegurar el punto exacto de la emergencia.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

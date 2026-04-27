@@ -15,39 +15,63 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDisabled = onPressed == null || isLoading;
+
     return SizedBox(
       width: double.infinity,
       height: 52,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          elevation: 0,
-          backgroundColor: AppColors.primaryBlue,
-          disabledBackgroundColor: AppColors.primaryBlue.withValues(
-            alpha: 0.55,
-          ),
-          foregroundColor: AppColors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: const BorderSide(color: AppColors.borderSide, width: 1.5),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.2,
-          ),
-        ),
-        child: isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: isDisabled
+              ? null
+              : const LinearGradient(
+                  colors: [Color(0xFF2563EB), AppColors.primaryBlue],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              )
-            : Text(text),
+          color: isDisabled
+              ? AppColors.primaryBlue.withValues(alpha: 0.55)
+              : null,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: isDisabled
+              ? null
+              : [
+                  BoxShadow(
+                    color: AppColors.primaryBlue.withValues(alpha: 0.35),
+                    blurRadius: 14,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+        ),
+        child: ElevatedButton(
+          onPressed: isDisabled ? null : onPressed,
+          style: ElevatedButton.styleFrom(
+            elevation: 0,
+            backgroundColor: Colors.transparent,
+            disabledBackgroundColor: Colors.transparent,
+            foregroundColor: AppColors.white,
+            disabledForegroundColor: AppColors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
+            ),
+          ),
+          child: isLoading
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+                  ),
+                )
+              : Text(text),
+        ),
       ),
     );
   }

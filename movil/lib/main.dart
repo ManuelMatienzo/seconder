@@ -11,6 +11,7 @@ import 'package:movil/domain/usecases/submit_report_usecase.dart';
 import 'package:movil/presentation/pages/login/login_page.dart';
 import 'package:movil/presentation/providers/auth_provider.dart';
 import 'package:movil/presentation/providers/report_provider.dart';
+import 'package:movil/presentation/providers/vehicle_provider.dart';
 
 void main() {
   runApp(const EmergencyClientApp());
@@ -40,6 +41,9 @@ class EmergencyClientApp extends StatelessWidget {
               context.read<EmergencyRepository>(),
             ),
           ),
+        ),
+        ChangeNotifierProvider<VehicleProvider>(
+          create: (_) => VehicleProvider(),
         ),
       ],
       child: MaterialApp(

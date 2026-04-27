@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:movil/core/theme/app_colors.dart';
 import 'package:movil/presentation/pages/home/home_page.dart';
+import 'package:movil/presentation/pages/profile/profile_page.dart';
+import 'package:movil/presentation/pages/vehicles/vehicles_management_page.dart';
 
 class MainWrapper extends StatefulWidget {
   const MainWrapper({super.key});
@@ -14,21 +16,13 @@ class _MainWrapperState extends State<MainWrapper> {
 
   late final List<Widget> _pages = [
     const HomePage(),
-    const _MainTabPlaceholder(
-      title: 'Vehiculos',
-      icon: Icons.directions_car,
-      description: 'Gestiona la informacion de tus vehiculos registrados.',
-    ),
+    const VehiclesManagementPage(),
     const _MainTabPlaceholder(
       title: 'Historial',
       icon: Icons.history,
       description: 'Consulta el historial de reportes y asistencias.',
     ),
-    const _MainTabPlaceholder(
-      title: 'Perfil',
-      icon: Icons.person,
-      description: 'Administra tus datos personales y configuraciones.',
-    ),
+    const ProfilePage(),
   ];
 
   void _onTabChanged(int index) {
