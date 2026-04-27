@@ -9,6 +9,7 @@ class AssignmentDecisionRequest(ORMBaseModel):
 
 
 class AssignmentDecisionResponse(ORMBaseModel):
+    id_assignment: int
     id_incident: int
     id_workshop: int
     status: str

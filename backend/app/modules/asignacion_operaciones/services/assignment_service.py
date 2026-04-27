@@ -1,10 +1,12 @@
 from datetime import datetime, timezone
 
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models import Assignment, Incident
 from app.modules.asignacion_operaciones.schemas import AssignmentDecisionRequest
+from app.modules.gestion_usuarios.services import create_notification
 
 
 class AssignmentConflictError(Exception):
@@ -24,7 +26,12 @@ def decide_available_request(
     if incident.status != "pendiente":
         raise AssignmentConflictError("El incidente ya no esta disponible para gestion")
 
-    assignment = db.get(Assignment, {"id_incident": incident_id, "id_workshop": workshop_id})
+    assignment = db.scalar(
+        select(Assignment).where(
+            Assignment.id_incident == incident_id,
+            Assignment.id_workshop == workshop_id,
+        )
+    )
     now = datetime.now(timezone.utc)
 
     if assignment is None:
@@ -41,11 +48,25 @@ def decide_available_request(
         assignment.accepted_at = now
         assignment.assigned_at = now
         incident.status = "asignado"
+        create_notification(
+            db,
+            incident.id_client,
+            "Solicitud aceptada",
+            "Tu solicitud de asistencia fue aceptada por un taller.",
+            "assignment",
+        )
     else:
         assignment.accepted_at = None
         if assignment.assigned_at is None:
             assignment.assigned_at = now
         incident.status = "pendiente"
+        create_notification(
+            db,
+            incident.id_client,
+            "Solicitud rechazada",
+            "Un taller rechazo tu solicitud de asistencia. El incidente sigue disponible.",
+            "assignment",
+        )
 
     try:
         db.commit()

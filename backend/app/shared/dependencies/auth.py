@@ -92,8 +92,7 @@ def is_workshop_user(current_user: User, db: Session) -> bool:
 
 
 def is_admin_user(current_user: User) -> bool:
-    role_name = current_user.role.name.lower() if current_user.role and current_user.role.name else ""
-    return role_name in {"admin", "administrador"}
+    return current_user.id_role == 1
 
 
 def get_current_workshop_user(
@@ -130,4 +129,14 @@ def get_current_operations_user(
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
         detail="El usuario autenticado no tiene permisos operativos para ejecutar el motor de asignacion",
+    )
+
+
+def get_current_admin_user(current_user: User = Depends(get_current_user)) -> User:
+    if is_admin_user(current_user):
+        return current_user
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="El usuario autenticado no tiene permisos de administrador",
     )

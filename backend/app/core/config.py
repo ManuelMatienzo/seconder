@@ -1,14 +1,8 @@
 from functools import lru_cache
 import os
-from pathlib import Path
 from urllib.parse import quote_plus
 
-from dotenv import load_dotenv
 from pydantic import BaseModel, Field
-
-
-ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
-load_dotenv(dotenv_path=ENV_FILE)
 
 
 def _get_int_env(name: str, default: int) -> int:

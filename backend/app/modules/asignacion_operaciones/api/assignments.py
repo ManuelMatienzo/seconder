@@ -38,6 +38,7 @@ def decide_request(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
     return AssignmentDecisionResponse(
+        id_assignment=assignment.id_assignment,
         id_incident=assignment.id_incident,
         id_workshop=assignment.id_workshop,
         status=assignment.status,
