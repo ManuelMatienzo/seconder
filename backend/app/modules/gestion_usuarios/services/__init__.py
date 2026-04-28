@@ -22,7 +22,10 @@ from app.modules.gestion_usuarios.services.technician_service import (
 )
 from app.modules.gestion_usuarios.services.vehicle_service import create_vehicle, list_client_vehicles
 from app.modules.gestion_usuarios.services.workshop_service import (
+    create_workshop_account,
+    delete_workshop_by_user_id,
     get_workshop_by_user_id,
+    list_workshops,
     update_workshop_for_user,
     upsert_workshop_for_user,
 )
@@ -43,11 +46,14 @@ __all__ = [
     "create_notification",
     "mark_as_read",
     "register_client",
+    "create_workshop_account",
     "get_workshop_technician_or_404",
     "update_technician",
     "update_technician_availability",
     "update_admin_user_status",
     "get_workshop_by_user_id",
+    "list_workshops",
     "update_workshop_for_user",
     "upsert_workshop_for_user",
+    "delete_workshop_by_user_id",
 ]

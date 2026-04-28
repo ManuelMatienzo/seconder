@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from pydantic import Field
+from pydantic import EmailStr, Field
 
 from app.schemas.common import ORMBaseModel
 
@@ -13,6 +13,16 @@ class WorkshopUpsertRequest(ORMBaseModel):
     phone: str | None = Field(default=None, max_length=20)
     specialties: str | None = None
     is_available: bool
+
+
+class WorkshopAccountCreateRequest(WorkshopUpsertRequest):
+    name: str = Field(min_length=2, max_length=100)
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=128)
+
+
+class WorkshopAdminUpsertRequest(WorkshopUpsertRequest):
+    id_user: int = Field(ge=1)
 
 
 class WorkshopResponse(ORMBaseModel):

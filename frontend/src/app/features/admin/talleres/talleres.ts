@@ -1,100 +1,126 @@
-import { Component, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs';
 
-interface Taller {
-  nombre: string;
+import { TalleresService } from '../../../services/talleres.service';
+import { WorkshopAccountCreateRequest, WorkshopResponse, WorkshopUpsertRequest } from '../../../models/workshop';
+
+interface TallerForm {
+  name: string;
   email: string;
-  especialidad: string;
-  tieneGrua: boolean;
-  estado: 'Activo' | 'Pendiente' | 'Suspendido';
-  comision: number;
+  password: string;
+  workshop_name: string;
+  address: string;
+  latitude: number | null;
+  longitude: number | null;
+  phone: string;
+  specialties: string;
+  is_available: boolean;
 }
+
+const DEFAULT_COORDINATES = {
+  latitude: 0,
+  longitude: 0,
+};
+
+const EMPTY_TALLER_FORM: TallerForm = {
+  name: '',
+  email: '',
+  password: '',
+  workshop_name: '',
+  address: '',
+  latitude: DEFAULT_COORDINATES.latitude,
+  longitude: DEFAULT_COORDINATES.longitude,
+  phone: '',
+  specialties: '',
+  is_available: true,
+};
 
 @Component({
   selector: 'app-talleres',
   standalone: true,
-  imports: [FormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './talleres.html',
   styleUrl: './talleres.css',
 })
 export class Talleres {
-  listaTalleres = signal<Taller[]>([
-    { nombre: 'Taller 1', email: 'taller1@example.com', especialidad: 'Frenos', tieneGrua: true, estado: 'Activo', comision: 10 },
-    { nombre: 'Taller 2', email: 'taller2@example.com', especialidad: 'Motor', tieneGrua: false, estado: 'Pendiente', comision: 15 },
-    { nombre: 'Taller 3', email: 'taller3@example.com', especialidad: 'Suspensión', tieneGrua: true, estado: 'Suspendido', comision: 8 },
-    { nombre: 'Taller 4', email: 'taller4@example.com', especialidad: 'Electricidad', tieneGrua: false, estado: 'Activo', comision: 12 },
-    { nombre: 'Taller 5', email: 'taller5@example.com', especialidad: 'Pintura', tieneGrua: true, estado: 'Pendiente', comision: 20 },
-    { nombre: 'Taller 6', email: 'taller6@example.com', especialidad: 'Alineación', tieneGrua: false, estado: 'Activo', comision: 9 },
-    { nombre: 'Taller 7', email: 'taller7@example.com', especialidad: 'Transmisión', tieneGrua: true, estado: 'Suspendido', comision: 14 },
-    { nombre: 'Taller 8', email: 'taller8@example.com', especialidad: 'Llantas', tieneGrua: false, estado: 'Pendiente', comision: 11 },
-    { nombre: 'Taller 9', email: 'taller9@example.com', especialidad: 'Diagnóstico', tieneGrua: true, estado: 'Activo', comision: 13 },
-    { nombre: 'Taller 10', email: 'taller10@example.com', especialidad: 'Inyección', tieneGrua: false, estado: 'Pendiente', comision: 16 },
-    { nombre: 'Taller 11', email: 'taller11@example.com', especialidad: 'Frenos', tieneGrua: true, estado: 'Activo', comision: 10 },
-    { nombre: 'Taller 12', email: 'taller12@example.com', especialidad: 'Motor', tieneGrua: false, estado: 'Suspendido', comision: 18 },
-    { nombre: 'Taller 13', email: 'taller13@example.com', especialidad: 'Suspensión', tieneGrua: true, estado: 'Pendiente', comision: 7 },
-    { nombre: 'Taller 14', email: 'taller14@example.com', especialidad: 'Electricidad', tieneGrua: false, estado: 'Activo', comision: 12 },
-    { nombre: 'Taller 15', email: 'taller15@example.com', especialidad: 'Pintura', tieneGrua: true, estado: 'Suspendido', comision: 19 },
-    { nombre: 'Taller 16', email: 'taller16@example.com', especialidad: 'Alineación', tieneGrua: false, estado: 'Pendiente', comision: 10 },
-    { nombre: 'Taller 17', email: 'taller17@example.com', especialidad: 'Transmisión', tieneGrua: true, estado: 'Activo', comision: 15 },
-    { nombre: 'Taller 18', email: 'taller18@example.com', especialidad: 'Llantas', tieneGrua: false, estado: 'Suspendido', comision: 8 },
-    { nombre: 'Taller 19', email: 'taller19@example.com', especialidad: 'Diagnóstico', tieneGrua: true, estado: 'Activo', comision: 11 },
-    { nombre: 'Taller 20', email: 'taller20@example.com', especialidad: 'Inyección', tieneGrua: false, estado: 'Pendiente', comision: 17 },
-  ]);
-
+  listaTalleres = signal<WorkshopResponse[]>([]);
+  filtroNombre = signal('');
+  isLoading = signal(false);
+  errorMessage = signal('');
   isModalOpen = signal(false);
-  tallerSeleccionado = signal<Taller | null>(null);
-  comisionGlobal = signal(10);
   isModalNuevoOpen = signal(false);
-  nuevoTaller = signal<Omit<Taller, 'comision'> & { comision?: number; password?: string }>({
-    nombre: '',
-    email: '',
-    especialidad: '',
-    tieneGrua: false,
-    estado: 'Pendiente',
-    comision: 10,
+  showPassword = signal(false);
+  tallerSeleccionado = signal<WorkshopResponse | null>(null);
+  nuevoTaller = signal<TallerForm>({ ...EMPTY_TALLER_FORM });
+
+  talleresFiltrados = computed(() => {
+    const termino = this.filtroNombre().trim().toLowerCase();
+    if (!termino) {
+      return this.listaTalleres();
+    }
+
+    return this.listaTalleres().filter((taller) =>
+      taller.workshop_name.toLowerCase().includes(termino)
+    );
   });
 
+  constructor(private talleresService: TalleresService) {}
+
+  ngOnInit(): void {
+    this.cargarTalleres();
+  }
+
+  cargarTalleres(): void {
+    this.isLoading.set(true);
+    this.errorMessage.set('');
+    this.talleresService
+      .listWorkshops()
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (talleres) => this.listaTalleres.set(talleres),
+        error: () => this.errorMessage.set('No se pudieron cargar los talleres.'),
+      });
+  }
+
   abrirModalNuevo() {
-    this.nuevoTaller.set({
-      nombre: '',
-      email: '',
-      especialidad: '',
-      tieneGrua: false,
-      estado: 'Pendiente',
-      comision: this.comisionGlobal(),
-    });
+    this.errorMessage.set('');
+    this.nuevoTaller.set({ ...EMPTY_TALLER_FORM });
     this.isModalNuevoOpen.set(true);
   }
 
   cerrarModalNuevo() {
     this.isModalNuevoOpen.set(false);
-    this.nuevoTaller.set({
-      nombre: '',
-      email: '',
-      especialidad: '',
-      tieneGrua: false,
-      estado: 'Pendiente',
-      comision: this.comisionGlobal(),
-    });
+    this.nuevoTaller.set({ ...EMPTY_TALLER_FORM });
   }
 
   confirmarRegistro() {
-    const nuevo = this.nuevoTaller();
-    if (nuevo.nombre && nuevo.email && nuevo.especialidad) {
-      const tallerCompleto: Taller = {
-        nombre: nuevo.nombre,
-        email: nuevo.email,
-        especialidad: nuevo.especialidad,
-        tieneGrua: nuevo.tieneGrua,
-        estado: nuevo.estado as 'Activo' | 'Pendiente' | 'Suspendido',
-        comision: nuevo.comision ?? this.comisionGlobal(),
-      };
-      this.listaTalleres.update(talleres => [...talleres, tallerCompleto]);
-      this.cerrarModalNuevo();
+    const payload = this.buildRegisterPayload(this.nuevoTaller());
+    if (!payload) {
+      return;
     }
+
+    this.isLoading.set(true);
+    this.errorMessage.set('');
+    this.talleresService
+      .createWorkshopAccount(payload)
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (taller) => {
+          this.listaTalleres.update((talleres) => [taller, ...talleres]);
+          this.cerrarModalNuevo();
+        },
+        error: () => this.errorMessage.set('No se pudo registrar el taller.'),
+      });
   }
 
-  abrirEdicion(taller: Taller) {
+  togglePasswordVisibility(): void {
+    this.showPassword.update((visible) => !visible);
+  }
+
+  abrirEdicion(taller: WorkshopResponse) {
+    this.errorMessage.set('');
     this.tallerSeleccionado.set({ ...taller });
     this.isModalOpen.set(true);
   }
@@ -106,18 +132,144 @@ export class Talleres {
 
   guardarCambios() {
     const editado = this.tallerSeleccionado();
-    if (editado) {
-      this.listaTalleres.update(talleres => {
-        const index = talleres.findIndex(t => t.email === editado.email);
-        if (index > -1) {
-          const nuevaLista = [...talleres];
-          nuevaLista[index] = editado;
-          return nuevaLista;
-        } else {
-          return [...talleres, editado];
-        }
-      });
+    if (!editado) {
+      return;
     }
-    this.cerrarModal();
+
+    const payload = this.buildUpsertPayload(editado);
+    if (!payload) {
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.errorMessage.set('');
+    this.talleresService
+      .updateWorkshop(editado.id_user, payload)
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (taller) => {
+          this.listaTalleres.update((talleres) =>
+            talleres.map((item) => (item.id_user === taller.id_user ? taller : item))
+          );
+          this.cerrarModal();
+        },
+        error: () => this.errorMessage.set('No se pudo actualizar el taller.'),
+      });
+  }
+
+  eliminarTaller(taller: WorkshopResponse) {
+    if (!confirm(`¿Eliminar el taller ${taller.workshop_name}?`)) {
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.errorMessage.set('');
+    this.talleresService
+      .deleteWorkshop(taller.id_user)
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: () =>
+          this.listaTalleres.update((talleres) =>
+            talleres.filter((item) => item.id_user !== taller.id_user)
+          ),
+        error: () => this.errorMessage.set('No se pudo eliminar el taller.'),
+      });
+  }
+
+  updateNuevoTallerField<K extends keyof TallerForm>(key: K, value: TallerForm[K]): void {
+    this.nuevoTaller.update((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }
+
+  updateSeleccionadoField<K extends keyof WorkshopResponse>(
+    key: K,
+    value: WorkshopResponse[K]
+  ): void {
+    this.tallerSeleccionado.update((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [key]: value,
+      } as WorkshopResponse;
+    });
+  }
+
+  toNumber(value: unknown): number {
+    return Number(value);
+  }
+
+  toNumberOrNull(value: unknown): number | null {
+    if (value === '' || value === null || value === undefined) {
+      return null;
+    }
+
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+
+  private buildRegisterPayload(form: TallerForm): WorkshopAccountCreateRequest | null {
+    const name = form.name.trim();
+    const email = form.email.trim().toLowerCase();
+    const password = form.password.trim();
+
+    if (!name || !email || !password) {
+      this.errorMessage.set('Nombre, correo y contrasena son obligatorios.');
+      return null;
+    }
+
+    const payload = this.buildUpsertPayload(form);
+    if (!payload) {
+      return null;
+    }
+
+    return {
+      name,
+      email,
+      password,
+      ...payload,
+    };
+  }
+
+  private buildUpsertPayload(form: {
+    workshop_name: string;
+    address: string;
+    latitude: number | null;
+    longitude: number | null;
+    phone: string | null | undefined;
+    specialties: string | null | undefined;
+    is_available: boolean;
+  }): WorkshopUpsertRequest | null {
+    const nombre = form.workshop_name.trim();
+    const direccion = form.address.trim();
+    const latitude = form.latitude ?? DEFAULT_COORDINATES.latitude;
+    const longitude = form.longitude ?? DEFAULT_COORDINATES.longitude;
+
+    if (!nombre || !direccion) {
+      this.errorMessage.set('Nombre y direccion son obligatorios.');
+      return null;
+    }
+
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      this.errorMessage.set('La ubicacion del taller no es valida.');
+      return null;
+    }
+
+    const phone = form.phone ? form.phone.trim() : '';
+    const specialties = form.specialties ? form.specialties.trim() : '';
+
+    return {
+      workshop_name: nombre,
+      address: direccion,
+      latitude,
+      longitude,
+      phone: phone ? phone : null,
+      specialties: specialties ? specialties : null,
+      is_available: Boolean(form.is_available),
+    };
   }
 }

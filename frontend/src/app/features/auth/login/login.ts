@@ -22,8 +22,8 @@ export class Login {
 
   constructor(private fb: FormBuilder, private router: Router, private authService: AuthService) {
     this.loginForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required]],
+      email: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
+      password: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(128)]],
     });
 
     this.loginForm.valueChanges.subscribe(() => {
@@ -34,6 +34,10 @@ export class Login {
   }
 
   iniciarSesion(): void {
+    if (this.isSubmitting) {
+      return;
+    }
+
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
       this.errorMessage = 'Completa los campos requeridos antes de continuar.';
@@ -72,23 +76,63 @@ export class Login {
             return;
           }
 
-          if (error instanceof HttpErrorResponse && error.status === 0) {
-            this.errorMessage = 'No se pudo contactar al backend. Verifica que el servidor este en ejecucion.';
-            return;
-          }
-
-          if (error instanceof HttpErrorResponse && error.status === 401) {
-            this.errorMessage = 'Credenciales invalidas. Verifica tu correo y contrasena.';
-            return;
-          }
-
           if (error instanceof HttpErrorResponse) {
-            this.errorMessage = 'No se pudo iniciar sesion. Intenta nuevamente en unos segundos.';
+            this.errorMessage = this.resolveAuthError(error);
             return;
           }
 
           this.errorMessage = 'Ocurrio un error inesperado durante el inicio de sesion.';
         },
       });
+  }
+
+  private resolveAuthError(error: HttpErrorResponse): string {
+    const detail = this.extractBackendDetail(error.error);
+
+    if (error.status === 0) {
+      return 'No se pudo contactar al backend. Verifica que el servidor este en ejecucion.';
+    }
+
+    if (error.status === 401) {
+      return 'Credenciales invalidas. Verifica tu correo y contrasena.';
+    }
+
+    if (error.status === 422) {
+      return detail ?? 'Los datos enviados no son validos. Revisa el correo y la contrasena.';
+    }
+
+    if (error.status >= 500) {
+      return 'El servidor tuvo un problema. Intenta nuevamente en unos segundos.';
+    }
+
+    return detail ?? 'No se pudo iniciar sesion. Intenta nuevamente en unos segundos.';
+  }
+
+  private extractBackendDetail(payload: unknown): string | null {
+    if (!payload) {
+      return null;
+    }
+
+    if (typeof payload === 'string') {
+      return payload;
+    }
+
+    if (typeof payload !== 'object') {
+      return null;
+    }
+
+    const detail = (payload as { detail?: unknown }).detail;
+    if (typeof detail === 'string') {
+      return detail;
+    }
+
+    if (Array.isArray(detail) && detail.length > 0) {
+      const first = detail[0] as { msg?: unknown };
+      if (typeof first?.msg === 'string') {
+        return first.msg;
+      }
+    }
+
+    return null;
   }
 }
