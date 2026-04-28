@@ -35,4 +35,9 @@ class MockAuthRepository implements AuthRepository {
       role: 'CLIENTE',
     );
   }
+
+  @override
+  Future<void> logout() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+  }
 }

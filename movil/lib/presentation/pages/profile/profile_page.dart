@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:movil/core/theme/app_colors.dart';
+import 'package:movil/presentation/providers/auth_provider.dart';
+import 'package:movil/presentation/pages/login/login_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -158,8 +161,14 @@ class ProfilePage extends StatelessWidget {
             Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: () {
-                  // TODO: Implementar lógica de cerrar sesión
+                onTap: () async {
+                  await context.read<AuthProvider>().logout();
+                  if (!context.mounted) return;
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    (route) => false,
+                  );
                 },
                 borderRadius: BorderRadius.circular(12),
                 child: Container(

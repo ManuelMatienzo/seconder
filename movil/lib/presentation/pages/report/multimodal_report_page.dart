@@ -12,10 +12,12 @@ import 'package:movil/core/theme/app_colors.dart';
 import 'package:movil/core/widgets/custom_button.dart';
 import 'package:movil/core/widgets/custom_input.dart';
 import 'package:movil/presentation/providers/report_provider.dart';
+import 'package:movil/presentation/pages/report/waiting_help_page.dart';
 
 class MultimodalReportPage extends StatefulWidget {
-  const MultimodalReportPage({super.key, required this.currentPosition});
+  const MultimodalReportPage({super.key, required this.currentPosition, required this.vehicleId});
   final Position currentPosition;
+  final int vehicleId;
 
   @override
   State<MultimodalReportPage> createState() => _MultimodalReportPageState();
@@ -246,6 +248,7 @@ class _MultimodalReportPageState extends State<MultimodalReportPage> {
       optionalText: _detailsController.text.trim().isEmpty
           ? null
           : _detailsController.text.trim(),
+      vehicleId: widget.vehicleId,
     );
 
     if (!mounted) return;
@@ -259,7 +262,9 @@ class _MultimodalReportPageState extends State<MultimodalReportPage> {
             content: Text('Reporte enviado correctamente.'),
           ),
         );
-      navigator.pop();
+      navigator.pushReplacement(
+        MaterialPageRoute(builder: (_) => const WaitingHelpPage()),
+      );
       return;
     }
 

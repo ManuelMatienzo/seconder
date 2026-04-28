@@ -1,39 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:movil/domain/entities/vehicle.dart';
+import 'package:movil/data/repositories/api_vehicle_repository.dart';
 
 class VehicleProvider extends ChangeNotifier {
-  VehicleProvider() : _vehicles = _initialVehicles();
+  VehicleProvider(this.apiVehicleRepository);
 
-  List<Vehicle> _vehicles;
-
+  final ApiVehicleRepository apiVehicleRepository;
+  List<Vehicle> _vehicles = [];
+  bool isLoading = false;
+  
   List<Vehicle> get vehicles => List.unmodifiable(_vehicles);
 
-  // ── Seed data de prueba ──────────────────────────────────────────────
-
-  static List<Vehicle> _initialVehicles() => [
-        const Vehicle(
-          id: 'v-001',
-          brand: 'Toyota',
-          model: 'Corolla',
-          plate: 'ABC-1234',
-          year: 2020,
-          color: 'Blanco',
-        ),
-        const Vehicle(
-          id: 'v-002',
-          brand: 'Suzuki',
-          model: 'Jimny',
-          plate: 'XYZ-5678',
-          year: 2022,
-          color: 'Verde',
-        ),
-      ];
-
-  // ── Operaciones CRUD ─────────────────────────────────────────────────
-
-  void addVehicle(Vehicle vehicle) {
-    _vehicles = [..._vehicles, vehicle];
+  Future<void> loadVehicles(String clientId) async {
+    isLoading = true;
     notifyListeners();
+    try {
+      _vehicles = await apiVehicleRepository.getVehicles(clientId);
+    } catch (e) {
+      // Ignorar error por ahora
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> addVehicle(String clientId, Vehicle vehicle) async {
+    try {
+      final newVehicle = await apiVehicleRepository.createVehicle(clientId, vehicle);
+      _vehicles = [..._vehicles, newVehicle];
+      notifyListeners();
+    } catch (e) {
+      // Ignorar error por ahora
+    }
   }
 
   void removeVehicle(String id) {

@@ -5,11 +5,12 @@ class SubmitReportUseCase {
 
   final EmergencyRepository _repository;
 
-  Future<void> execute({
+  Future<int> execute({
     String? imagePath,
     String? audioPath,
     String? optionalText,
+    required int vehicleId,
   }) {
-    return _repository.submitReport(imagePath, audioPath, optionalText);
+    return _repository.submitReport(imagePath, audioPath, optionalText, vehicleId);
   }
 }

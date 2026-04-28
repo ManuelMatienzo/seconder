@@ -6,6 +6,7 @@ import 'package:movil/core/widgets/custom_button.dart';
 import 'package:movil/core/widgets/custom_input.dart';
 import 'package:movil/domain/entities/vehicle.dart';
 import 'package:movil/presentation/providers/vehicle_provider.dart';
+import 'package:movil/presentation/providers/auth_provider.dart';
 
 class VehiclesManagementPage extends StatelessWidget {
   const VehiclesManagementPage({super.key});
@@ -65,7 +66,12 @@ class VehiclesManagementPage extends StatelessWidget {
             foregroundColor: AppColors.white,
             elevation: 2,
             tooltip: 'Agregar vehículo',
-            onPressed: () => _showAddVehicleSheet(context, provider),
+            onPressed: () {
+              final user = context.read<AuthProvider>().currentUser;
+              if (user != null) {
+                _showAddVehicleSheet(context, provider, user.id);
+              }
+            },
             child: const Icon(Icons.add, size: 28),
           ),
         );
@@ -75,12 +81,12 @@ class VehiclesManagementPage extends StatelessWidget {
 
   // ── Bottom Sheet — Formulario de alta ─────────────────────────────────
 
-  void _showAddVehicleSheet(BuildContext context, VehicleProvider provider) {
+  void _showAddVehicleSheet(BuildContext context, VehicleProvider provider, String clientId) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _AddVehicleSheet(provider: provider),
+      builder: (_) => _AddVehicleSheet(provider: provider, clientId: clientId),
     );
   }
 }
@@ -188,8 +194,9 @@ class _EmptyState extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════════
 
 class _AddVehicleSheet extends StatefulWidget {
-  const _AddVehicleSheet({required this.provider});
+  const _AddVehicleSheet({required this.provider, required this.clientId});
   final VehicleProvider provider;
+  final String clientId;
 
   @override
   State<_AddVehicleSheet> createState() => _AddVehicleSheetState();
@@ -237,8 +244,9 @@ class _AddVehicleSheetState extends State<_AddVehicleSheet> {
     }
 
     widget.provider.addVehicle(
+      widget.clientId,
       Vehicle(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: '', // Será asignado por el backend
         brand: brand,
         model: model,
         plate: plate.toUpperCase(),

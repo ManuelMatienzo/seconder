@@ -60,11 +60,13 @@ class MockEmergencyRepository implements EmergencyRepository {
   }
 
   @override
-  Future<void> submitReport(
+  Future<int> submitReport(
     String? imagePath,
     String? audioPath,
     String? optionalText,
+    int vehicleId,
   ) async {
     await Future.delayed(const Duration(seconds: 3));
+    return 1; // ID de prueba
   }
 }

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:movil/core/theme/app_colors.dart';
 import 'package:movil/presentation/pages/report/multimodal_report_page.dart';
+import 'package:provider/provider.dart';
+import 'package:movil/presentation/providers/vehicle_provider.dart';
+import 'package:movil/presentation/providers/auth_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -11,12 +14,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
-  final List<_VehicleInfo> _vehicles = const [
-    _VehicleInfo(name: 'Toyota Hilux', plate: 'ABC-123'),
-    _VehicleInfo(name: 'Nissan Frontier', plate: 'NZX-541'),
-    _VehicleInfo(name: 'Suzuki Vitara', plate: 'SAA-208'),
-  ];
-
   int _selectedVehicleIndex = 0;
 
   // ── Animación de pulso del botón de pánico ────────────────────────────
@@ -41,6 +38,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
 
     _getCurrentLocation();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = context.read<AuthProvider>().currentUser;
+      if (user != null) {
+        context.read<VehicleProvider>().loadVehicles(user.id);
+      }
+    });
   }
 
   Future<void> _getCurrentLocation() async {
@@ -107,8 +111,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Saludo ────────────────────────────────────────────────────
-            const Text(
-              'Hola, Juan Manuel 👋',
+            Text(
+              'Hola, ${context.watch<AuthProvider>().currentUser?.name ?? 'Usuario'} 👋',
               style: TextStyle(
                 color: AppColors.textMain,
                 fontSize: 24,
@@ -126,7 +130,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 24),
 
-            // ── Sección 1: Vehículos ─────────────────────────────────────
             const Text(
               '1. Confirma tu vehículo actual',
               style: TextStyle(
@@ -136,26 +139,42 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ),
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              height: 110,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _vehicles.length,
-                itemBuilder: (context, index) {
-                  final vehicle = _vehicles[index];
-                  final isSelected = index == _selectedVehicleIndex;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: VehicleCard(
-                      name: vehicle.name,
-                      plate: vehicle.plate,
-                      selected: isSelected,
-                      onTap: () =>
-                          setState(() => _selectedVehicleIndex = index),
-                    ),
+            Consumer<VehicleProvider>(
+              builder: (context, vehicleProvider, _) {
+                final _vehicles = vehicleProvider.vehicles;
+                if (vehicleProvider.isLoading) {
+                  return const SizedBox(
+                    height: 110,
+                    child: Center(child: CircularProgressIndicator()),
                   );
-                },
-              ),
+                }
+                if (_vehicles.isEmpty) {
+                  return const SizedBox(
+                    height: 110,
+                    child: Center(child: Text('No tienes vehículos registrados.')),
+                  );
+                }
+                return SizedBox(
+                  height: 110,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _vehicles.length,
+                    itemBuilder: (context, index) {
+                      final vehicle = _vehicles[index];
+                      final isSelected = index == _selectedVehicleIndex;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: VehicleCard(
+                          name: '${vehicle.brand} ${vehicle.model}',
+                          plate: vehicle.plate,
+                          selected: isSelected,
+                          onTap: () => setState(() => _selectedVehicleIndex = index),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 24),
 
@@ -193,11 +212,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       );
                     return;
                   }
+                  final vehicleProvider = context.read<VehicleProvider>();
+                  if (vehicleProvider.vehicles.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Por favor registre un vehículo primero.')),
+                    );
+                    return;
+                  }
+                  final selectedVehicle = vehicleProvider.vehicles[_selectedVehicleIndex];
+
                   Navigator.push(
                     context,
                     MaterialPageRoute<void>(
                       builder: (_) => MultimodalReportPage(
                         currentPosition: _currentPosition!,
+                        vehicleId: int.parse(selectedVehicle.id),
                       ),
                     ),
                   );
@@ -587,12 +616,3 @@ class _PanicButton extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// Modelo auxiliar de datos
-// ═══════════════════════════════════════════════════════════════════════
-
-class _VehicleInfo {
-  const _VehicleInfo({required this.name, required this.plate});
-  final String name;
-  final String plate;
-}

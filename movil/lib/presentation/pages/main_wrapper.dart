@@ -3,25 +3,29 @@ import 'package:movil/core/theme/app_colors.dart';
 import 'package:movil/presentation/pages/home/home_page.dart';
 import 'package:movil/presentation/pages/profile/profile_page.dart';
 import 'package:movil/presentation/pages/vehicles/vehicles_management_page.dart';
+import 'package:movil/presentation/pages/report/active_emergency_page.dart';
 
 class MainWrapper extends StatefulWidget {
-  const MainWrapper({super.key});
+  const MainWrapper({super.key, this.initialIndex = 0});
+  final int initialIndex;
 
   @override
   State<MainWrapper> createState() => _MainWrapperState();
 }
 
 class _MainWrapperState extends State<MainWrapper> {
-  int _currentIndex = 0;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+  }
 
   late final List<Widget> _pages = [
     const HomePage(),
     const VehiclesManagementPage(),
-    const _MainTabPlaceholder(
-      title: 'Historial',
-      icon: Icons.history,
-      description: 'Consulta el historial de reportes y asistencias.',
-    ),
+    const ActiveEmergencyPage(),
     const ProfilePage(),
   ];
 
@@ -51,8 +55,8 @@ class _MainWrapperState extends State<MainWrapper> {
             label: 'Vehiculos',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Historial',
+            icon: Icon(Icons.warning_amber_rounded),
+            label: 'Emergencia',
           ),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
         ],

@@ -2,16 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:movil/domain/entities/user.dart';
 import 'package:movil/domain/usecases/login_usecase.dart';
 import 'package:movil/domain/usecases/register_usecase.dart';
+import 'package:movil/domain/repositories/auth_repository.dart';
 
 class AuthProvider extends ChangeNotifier {
   AuthProvider({
     required LoginUseCase loginUseCase,
     required RegisterUseCase registerUseCase,
+    required AuthRepository authRepository,
   }) : _loginUseCase = loginUseCase,
-       _registerUseCase = registerUseCase;
+       _registerUseCase = registerUseCase,
+       _authRepository = authRepository;
 
   final LoginUseCase _loginUseCase;
   final RegisterUseCase _registerUseCase;
+  final AuthRepository _authRepository;
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -59,6 +63,18 @@ class AuthProvider extends ChangeNotifier {
     } catch (error) {
       _errorMessage = error.toString().replaceFirst('Exception: ', '');
       return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> logout() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _authRepository.logout();
+      _currentUser = null;
     } finally {
       _isLoading = false;
       notifyListeners();

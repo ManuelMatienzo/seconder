@@ -8,9 +8,10 @@ abstract class EmergencyRepository {
     required String description,
   });
 
-  Future<void> submitReport(
+  Future<int> submitReport(
     String? imagePath,
     String? audioPath,
     String? optionalText,
+    int vehicleId,
   );
 }

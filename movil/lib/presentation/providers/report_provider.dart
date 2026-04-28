@@ -9,25 +9,30 @@ class ReportProvider extends ChangeNotifier {
 
   bool _isSubmitting = false;
   String? _errorMessage;
+  int? _activeIncidentId;
 
   bool get isSubmitting => _isSubmitting;
   String? get errorMessage => _errorMessage;
+  int? get activeIncidentId => _activeIncidentId;
 
   Future<bool> submitReport({
     String? imagePath,
     String? audioPath,
     String? optionalText,
+    required int vehicleId,
   }) async {
     _isSubmitting = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      await _submitReportUseCase.execute(
+      final incidentId = await _submitReportUseCase.execute(
         imagePath: imagePath,
         audioPath: audioPath,
         optionalText: optionalText,
+        vehicleId: vehicleId,
       );
+      _activeIncidentId = incidentId;
       return true;
     } catch (error) {
       _errorMessage = error.toString().replaceFirst('Exception: ', '');

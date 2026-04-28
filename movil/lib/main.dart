@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:movil/core/theme/app_colors.dart';
-import 'package:movil/data/repositories/mock_auth_repository.dart';
-import 'package:movil/data/repositories/mock_emergency_repository.dart';
+import 'package:movil/data/repositories/api_auth_repository.dart';
+import 'package:movil/data/repositories/api_emergency_repository.dart';
+import 'package:movil/data/repositories/api_vehicle_repository.dart';
 import 'package:movil/domain/repositories/auth_repository.dart';
 import 'package:movil/domain/repositories/emergency_repository.dart';
 import 'package:movil/domain/usecases/login_usecase.dart';
@@ -22,8 +23,9 @@ class EmergencyClientApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authRepository = MockAuthRepository();
-    final emergencyRepository = MockEmergencyRepository();
+    final authRepository = ApiAuthRepository();
+    final emergencyRepository = ApiEmergencyRepository();
+    final vehicleRepository = ApiVehicleRepository();
 
     return MultiProvider(
       providers: [
@@ -33,6 +35,7 @@ class EmergencyClientApp extends StatelessWidget {
           create: (context) => AuthProvider(
             loginUseCase: LoginUseCase(context.read<AuthRepository>()),
             registerUseCase: RegisterUseCase(context.read<AuthRepository>()),
+            authRepository: context.read<AuthRepository>(),
           ),
         ),
         ChangeNotifierProvider<ReportProvider>(
@@ -43,7 +46,7 @@ class EmergencyClientApp extends StatelessWidget {
           ),
         ),
         ChangeNotifierProvider<VehicleProvider>(
-          create: (_) => VehicleProvider(),
+          create: (_) => VehicleProvider(vehicleRepository),
         ),
       ],
       child: MaterialApp(
