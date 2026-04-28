@@ -19,6 +19,7 @@ export class Login {
   loginForm: FormGroup;
   isSubmitting = false;
   errorMessage = '';
+  showPassword = false;
 
   constructor(private fb: FormBuilder, private router: Router, private authService: AuthService) {
     this.loginForm = this.fb.group({

@@ -1,16 +1,17 @@
 import { Routes } from '@angular/router';
 
 // 1. Importamos tus componentes (¡Nota cómo le quitamos el .component al final de la ruta!)
-import { Login } from './features/auth/login/login'; // (Si tu login sí tiene el .component, déjalo así)
+import { Login } from './features/auth/login/login';
 import { AdminLayout } from './features/admin/admin-layout/admin-layout';
 import { Dashboard } from './features/admin/dashboard/dashboard';
 import { Talleres } from './features/admin/talleres/talleres';
-import { CatalogoVehiculos } from './features/admin/catalogo-vehiculos/catalogo-vehiculos';
+import { Clientes } from './features/admin/clientes/clientes';
 import { AdminFinanzas } from './features/admin/admin-finanzas/admin-finanzas';
 import { TallerLayout } from './features/taller/taller-layout/taller-layout';
 import { TallerDashboard } from './features/taller/taller-dashboard/taller-dashboard';
 import { TallerHistorial } from './features/taller/taller-historial/taller-historial';
 import { TallerRecursos } from './features/taller/taller-recursos/taller-recursos';
+import { TallerUbicacion } from './features/taller/taller-ubicacion/taller-ubicacion';
 
 export const routes: Routes = [
   { path: 'login', component: Login },
@@ -21,7 +22,7 @@ export const routes: Routes = [
     children: [
       { path: 'dashboard', component: Dashboard },
       { path: 'talleres', component: Talleres },
-      { path: 'vehiculos', component: CatalogoVehiculos },
+      { path: 'clientes', component: Clientes },
       { path: 'finanzas', component: AdminFinanzas },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
@@ -35,6 +36,7 @@ export const routes: Routes = [
       { path: 'dashboard', component: TallerDashboard },
       { path: 'historial', component: TallerHistorial },
       { path: 'recursos', component: TallerRecursos },
+      { path: 'ubicacion', component: TallerUbicacion },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },

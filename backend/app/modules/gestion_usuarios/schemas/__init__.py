@@ -8,7 +8,7 @@ from app.modules.gestion_usuarios.schemas.admin_user import (
     AdminUserWorkshopDataResponse,
 )
 from app.modules.gestion_usuarios.schemas.auth import LoginRequest, LoginResponse
-from app.modules.gestion_usuarios.schemas.client import ClientRegisterRequest, ClientRegisterResponse, ClientResponse
+from app.modules.gestion_usuarios.schemas.client import ClientAdminResponse, ClientRegisterRequest, ClientRegisterResponse, ClientResponse, ClientUpdateRequest
 from app.modules.gestion_usuarios.schemas.debug_admin import DebugAdminCreateRequest, DebugAdminCreateResponse
 from app.modules.gestion_usuarios.schemas.notification import (
     NotificationReadResponse,
@@ -39,9 +39,11 @@ __all__ = [
     "AdminUserStatusUpdateRequest",
     "AdminUserStatusUpdateResponse",
     "AdminUserWorkshopDataResponse",
+    "ClientAdminResponse",
     "ClientRegisterRequest",
     "ClientRegisterResponse",
     "ClientResponse",
+    "ClientUpdateRequest",
     "DebugAdminCreateRequest",
     "DebugAdminCreateResponse",
     "NotificationReadResponse",

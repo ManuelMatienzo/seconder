@@ -34,11 +34,19 @@
         </div>
         <div class="ml-4">
           <h3 class="text-sm font-medium text-gray-500">Talleres en Línea</h3>
-          <p class="text-2xl font-bold text-gray-900">108</p>
+          @if (isLoadingStats()) {
+            <div class="h-8 w-12 bg-gray-100 animate-pulse rounded mt-1"></div>
+          } @else {
+            <p class="text-2xl font-bold text-gray-900">{{ talleresEnLinea() }}</p>
+          }
         </div>
       </div>
       <div class="mt-4 text-sm text-gray-500 flex items-center">
-        De 150 registrados
+        @if (isLoadingStats()) {
+          <span class="text-gray-300">Cargando...</span>
+        } @else {
+          De {{ talleresTotal() }} registrados
+        }
       </div>
     </div>
 

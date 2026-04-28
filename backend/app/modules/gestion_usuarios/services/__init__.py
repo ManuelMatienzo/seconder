@@ -5,7 +5,7 @@ from app.modules.gestion_usuarios.services.admin_user_service import (
     update_admin_user_status,
 )
 from app.modules.gestion_usuarios.services.auth_service import authenticate_user
-from app.modules.gestion_usuarios.services.client_service import get_client_by_id, register_client
+from app.modules.gestion_usuarios.services.client_service import delete_client, get_client_by_id, list_clients, register_client, update_client
 from app.modules.gestion_usuarios.services.debug_admin_service import create_debug_admin
 from app.modules.gestion_usuarios.services.notification_service import (
     count_unread,
@@ -38,6 +38,11 @@ __all__ = [
     "get_admin_user_detail",
     "get_client_by_id",
     "get_user_notifications",
+    "delete_client",
+    "get_client_by_id",
+    "list_clients",
+    "register_client",
+    "update_client",
     "list_admin_incidents",
     "list_admin_users",
     "list_client_vehicles",
@@ -45,7 +50,6 @@ __all__ = [
     "count_unread",
     "create_notification",
     "mark_as_read",
-    "register_client",
     "create_workshop_account",
     "get_workshop_technician_or_404",
     "update_technician",

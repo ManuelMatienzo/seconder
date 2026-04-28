@@ -1,9 +1,9 @@
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models import Client, Role, User
-from app.modules.gestion_usuarios.schemas import ClientRegisterRequest
+from app.modules.gestion_usuarios.schemas import ClientRegisterRequest, ClientUpdateRequest
 from app.shared.security.security import hash_password
 
 
@@ -23,6 +23,53 @@ def get_or_create_client_role(db: Session) -> Role:
 
 def get_client_by_id(db: Session, client_id: int) -> Client | None:
     return db.get(Client, client_id)
+
+
+def list_clients(db: Session) -> list[Client]:
+    stmt = (
+        select(Client)
+        .options(joinedload(Client.user))
+        .join(Client.user)
+        .order_by(User.name.asc())
+    )
+    return list(db.scalars(stmt))
+
+
+def update_client(db: Session, client_id: int, data: ClientUpdateRequest) -> Client:
+    client = db.get(Client, client_id)
+    if client is None:
+        raise LookupError("Cliente no encontrado")
+
+    user = client.user
+    if user is None:
+        raise LookupError("Usuario del cliente no encontrado")
+
+    duplicate = db.scalar(
+        select(User).where(User.email == data.email, User.id_user != client_id)
+    )
+    if duplicate:
+        raise ValueError("El correo electronico ya esta en uso por otro usuario")
+
+    user.name = data.name
+    user.email = data.email
+    user.phone = data.phone
+
+    db.commit()
+    db.refresh(client)
+    return client
+
+
+def delete_client(db: Session, client_id: int) -> None:
+    client = db.get(Client, client_id)
+    if client is None:
+        raise LookupError("Cliente no encontrado")
+
+    user = client.user
+    db.delete(client)
+    db.flush()
+    if user:
+        db.delete(user)
+    db.commit()
 
 
 def register_client(db: Session, data: ClientRegisterRequest) -> Client:

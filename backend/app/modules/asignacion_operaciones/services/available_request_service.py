@@ -1,13 +1,14 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import AiAnalysis, Incident, Vehicle
+from app.models import AiAnalysis, Incident, Vehicle, User
 
 
 def list_available_requests(db: Session) -> list[dict]:
     stmt = (
-        select(Incident, Vehicle, AiAnalysis)
+        select(Incident, Vehicle, AiAnalysis, User)
         .join(Vehicle, Vehicle.id_vehicle == Incident.id_vehicle)
+        .join(User, User.id_user == Incident.id_client)
         .outerjoin(AiAnalysis, AiAnalysis.id_incident == Incident.id_incident)
         .where(Incident.status == "pendiente")
         .order_by(Incident.created_at.desc())
@@ -16,7 +17,7 @@ def list_available_requests(db: Session) -> list[dict]:
     results = db.execute(stmt).all()
     items: list[dict] = []
 
-    for incident, vehicle, ai_analysis in results:
+    for incident, vehicle, ai_analysis, user in results:
         items.append(
             {
                 "id_incident": incident.id_incident,
@@ -28,9 +29,14 @@ def list_available_requests(db: Session) -> list[dict]:
                 "status": incident.status,
                 "created_at": incident.created_at,
                 "updated_at": incident.updated_at,
+                "client": {
+                    "id_client": user.id_user,
+                    "name": user.name,
+                    "phone": user.phone,
+                },
                 "vehicle": {
                     "id_vehicle": vehicle.id_vehicle,
-                    "plate": vehicle.plate,
+                    "license_plate": vehicle.plate,
                     "brand": vehicle.brand,
                     "model": vehicle.model,
                     "year": vehicle.year,

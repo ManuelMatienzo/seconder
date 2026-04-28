@@ -11,8 +11,10 @@ from app.modules.gestion_usuarios.services import create_notification
 
 TERMINAL_TRACKING_STATUSES = {"rechazado", "completado", "cancelado"}
 VALID_TRANSITIONS: dict[str, set[str]] = {
-    "aceptado": {"en_camino", "cancelado"},
-    "en_camino": {"completado", "cancelado"},
+    "aceptado": {"alistando", "cancelado"},
+    "alistando": {"en_ruta", "cancelado"},
+    "en_ruta": {"en_sitio", "cancelado"},
+    "en_sitio": {"completado", "cancelado"},
 }
 
 
@@ -109,8 +111,12 @@ def ensure_valid_transition(current_status: str, new_status: str) -> None:
 def reflect_incident_status_from_assignment(assignment_status: str, incident: Incident) -> None:
     if assignment_status == "aceptado":
         incident.status = "asignado"
-    elif assignment_status == "en_camino":
-        incident.status = "en_camino"
+    elif assignment_status == "alistando":
+        incident.status = "alistando"
+    elif assignment_status == "en_ruta":
+        incident.status = "en_ruta"
+    elif assignment_status == "en_sitio":
+        incident.status = "en_sitio"
     elif assignment_status == "completado":
         incident.status = "atendido"
     elif assignment_status == "cancelado":
@@ -144,8 +150,8 @@ def update_assignment_tracking(
         ensure_valid_transition(assignment.status, data.status)
         assignment.status = data.status
 
-        if data.status == "en_camino" and assignment.id_technician is None:
-            raise AssignmentTrackingConflictError("Debes asignar un tecnico antes de marcar el servicio como en_camino")
+        if data.status == "en_ruta" and assignment.id_technician is None:
+            raise AssignmentTrackingConflictError("Debes asignar un tecnico antes de marcar el servicio como en_ruta")
 
         if data.status == "completado":
             assignment.completed_at = now
@@ -159,12 +165,20 @@ def update_assignment_tracking(
 
         reflect_incident_status_from_assignment(assignment.status, incident)
 
-        if data.status == "en_camino":
+        if data.status == "en_ruta":
             create_notification(
                 db,
                 incident.id_client,
                 "Servicio en camino",
                 "El tecnico ya esta en ruta hacia tu ubicacion.",
+                "tracking",
+            )
+        elif data.status == "en_sitio":
+            create_notification(
+                db,
+                incident.id_client,
+                "Tecnico en sitio",
+                "El tecnico ha llegado a tu ubicacion.",
                 "tracking",
             )
         elif data.status == "completado":

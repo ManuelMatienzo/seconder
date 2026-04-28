@@ -38,6 +38,18 @@ export class TalleresService {
     return this.http.delete<void>(`${this.baseUrl}/${idUser}`, { headers: this.buildAuthHeaders() });
   }
 
+  getMyWorkshop(): Observable<WorkshopResponse> {
+    return this.http.get<WorkshopResponse>(`${this.baseUrl}/me`, { headers: this.buildAuthHeaders() });
+  }
+
+  registerMyWorkshop(payload: WorkshopUpsertRequest): Observable<WorkshopResponse> {
+    return this.http.post<WorkshopResponse>(`${this.baseUrl}/me`, payload, { headers: this.buildAuthHeaders() });
+  }
+
+  updateMyWorkshop(payload: WorkshopUpsertRequest): Observable<WorkshopResponse> {
+    return this.http.put<WorkshopResponse>(`${this.baseUrl}/me`, payload, { headers: this.buildAuthHeaders() });
+  }
+
   private buildAuthHeaders(): HttpHeaders {
     const token = localStorage.getItem('access_token');
     if (!token) {

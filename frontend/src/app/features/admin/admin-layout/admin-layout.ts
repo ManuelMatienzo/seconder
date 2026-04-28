@@ -1,29 +1,29 @@
-import { Component, inject, signal } from '@angular/core'; // Añadimos signal
+import { Component, inject, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
-//yea
+import { AuthService } from '../../../services/auth.service';
+
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive], 
+  imports: [RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './admin-layout.html',
 })
 export class AdminLayout {
-  private router = inject(Router);
-  
-  // 1. Creamos la señal para controlar el menú (empieza cerrado en móviles)
+  private router      = inject(Router);
+  private authService = inject(AuthService);
+
   isSidebarOpen = signal(false);
 
-  // 2. Función para abrir/cerrar el menú
   toggleSidebar() {
     this.isSidebarOpen.update(val => !val);
   }
 
-  // 3. Función para cerrar el menú si hacen clic en un enlace (útil en móviles)
   closeSidebar() {
     this.isSidebarOpen.set(false);
   }
 
   cerrarSesion() {
+    this.authService.clearSession();
     this.router.navigate(['/login']);
   }
 }
