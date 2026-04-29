@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { finalize } from 'rxjs';
 
 import { TalleresService } from '../../../services/talleres.service';
@@ -111,7 +112,15 @@ export class Talleres {
           this.listaTalleres.update((talleres) => [taller, ...talleres]);
           this.cerrarModalNuevo();
         },
-        error: () => this.errorMessage.set('No se pudo registrar el taller.'),
+        error: (err: HttpErrorResponse) => {
+          if (err.error?.detail && typeof err.error.detail === 'string') {
+            this.errorMessage.set(err.error.detail);
+          } else if (err.status === 422) {
+            this.errorMessage.set('Verifica que todos los campos sean validos (ej. correo valido, telefono correcto).');
+          } else {
+            this.errorMessage.set('No se pudo registrar el taller.');
+          }
+        },
       });
   }
 
@@ -153,7 +162,15 @@ export class Talleres {
           );
           this.cerrarModal();
         },
-        error: () => this.errorMessage.set('No se pudo actualizar el taller.'),
+        error: (err: HttpErrorResponse) => {
+          if (err.error?.detail && typeof err.error.detail === 'string') {
+            this.errorMessage.set(err.error.detail);
+          } else if (err.status === 422) {
+            this.errorMessage.set('Verifica que los datos ingresados sean validos.');
+          } else {
+            this.errorMessage.set('No se pudo actualizar el taller.');
+          }
+        },
       });
   }
 
@@ -219,6 +236,11 @@ export class Talleres {
 
     if (!name || !email || !password) {
       this.errorMessage.set('Nombre, correo y contrasena son obligatorios.');
+      return null;
+    }
+
+    if (password.length < 8) {
+      this.errorMessage.set('La contrasena debe tener al menos 8 caracteres.');
       return null;
     }
 
