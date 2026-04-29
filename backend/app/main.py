@@ -28,7 +28,7 @@ def create_app() -> FastAPI:
     os.makedirs("uploads", exist_ok=True)
     app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
-    cors_origins = os.getenv("CORS_ORIGINS", "*").split(",")
+    cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:4200").split(",")
 
     app.add_middleware(
         CORSMiddleware,
