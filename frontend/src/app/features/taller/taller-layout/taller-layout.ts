@@ -16,7 +16,7 @@ export class TallerLayout {
 
   private authUser = JSON.parse(localStorage.getItem('auth_user') ?? 'null');
 
-  userName     = this.authUser?.name  ?? 'Usuario';
+  userName     = this.authUser?.workshop_name || this.authUser?.name || 'Usuario';
   userEmail    = this.authUser?.email ?? '';
   userInitials = this.userName
     .split(' ')

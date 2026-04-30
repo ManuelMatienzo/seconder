@@ -15,4 +15,5 @@ class UserResponse(ORMBaseModel):
     created_at: datetime
     updated_at: datetime
     id_role: int
+    workshop_name: str | None = None
     role: RoleResponse | None = None

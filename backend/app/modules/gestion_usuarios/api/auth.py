@@ -21,9 +21,16 @@ def login(data: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse:
         )
 
     access_token = create_access_token(subject=str(user.id_user))
+    
+    # Populate workshop_name if user is a workshop
+    if user.workshop:
+        user.workshop_name = user.workshop.workshop_name
+        
     return LoginResponse(message="Login correcto", access_token=access_token, user=user)
 
 
 @router.get("/me", response_model=UserResponse)
 def get_authenticated_user(current_user: User = Depends(get_current_user)) -> User:
+    if current_user.workshop:
+        current_user.workshop_name = current_user.workshop.workshop_name
     return current_user
