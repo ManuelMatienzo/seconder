@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:movil/data/models/user_model.dart';
 import 'package:movil/domain/entities/user.dart';
 import 'package:movil/domain/repositories/auth_repository.dart';
-import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 String getBaseUrl() {
@@ -40,6 +39,7 @@ class ApiAuthRepository implements AuthRepository {
         email: userJson['email'],
         name: userJson['name'],
         role: userJson['role'] != null ? userJson['role']['name'] : 'CLIENTE',
+        phone: userJson['phone'],
       );
     } else {
       throw Exception('Credenciales inválidas');

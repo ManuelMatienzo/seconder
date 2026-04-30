@@ -49,3 +49,14 @@ def list_client_vehicles(db: Session, client_id: int) -> list[Vehicle]:
             .order_by(Vehicle.created_at.desc())
         )
     )
+
+def delete_vehicle(db: Session, client_id: int, vehicle_id: int) -> None:
+    vehicle = db.get(Vehicle, vehicle_id)
+    if not vehicle:
+        raise LookupError("Vehiculo no encontrado")
+    if vehicle.id_client != client_id:
+        raise ValueError("No tienes permiso para eliminar este vehiculo")
+    
+    db.delete(vehicle)
+    db.commit()
+

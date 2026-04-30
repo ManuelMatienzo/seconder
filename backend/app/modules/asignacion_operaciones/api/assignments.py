@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models import User
-from app.modules.asignacion_operaciones.schemas import AssignmentDecisionRequest, AssignmentDecisionResponse
-from app.modules.asignacion_operaciones.services import AssignmentConflictError, decide_available_request
+from app.modules.gestion_usuarios.models.user import User
+from app.modules.asignacion_operaciones.schemas.assignment_decision import AssignmentDecisionRequest, AssignmentDecisionResponse
+from app.modules.asignacion_operaciones.services.assignment_service import AssignmentConflictError, decide_available_request
 from app.shared.dependencies.auth import get_current_workshop_user
 
 router = APIRouter(prefix="/operations", tags=["Operations"])

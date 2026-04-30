@@ -155,3 +155,48 @@ def run_assignment_engine(db: Session, incident_id: int) -> dict:
         },
         "recommended_workshops": recommendations,
     }
+
+
+def auto_assign_workshop(db: Session, incident: "Incident") -> int | None:
+    """
+    Corre el motor de ranking Haversine y asigna el taller con mayor score
+    al incidente. Devuelve el id_workshop asignado o None si no hay talleres.
+    Diseñado para ser llamado dentro de una transacción existente (sin commit).
+    """
+    from app.models import Workshop  # import local para evitar circularidad
+
+    ai_analysis = incident.ai_analysis
+    classification = ai_analysis.classification if ai_analysis else None
+    priority_level = ai_analysis.priority_level if ai_analysis else None
+
+    workshops = db.scalars(
+        select(Workshop)
+        .where(Workshop.is_available.is_(True))
+        .order_by(Workshop.rating.desc().nullslast(), Workshop.id_user.asc())
+    ).all()
+
+    if not workshops:
+        return None
+
+    incident_lat = float(incident.latitude)
+    incident_lon = float(incident.longitude)
+    best_workshop_id: int | None = None
+    best_score = -1.0
+
+    for workshop in workshops:
+        distance_km = haversine_distance_km(
+            incident_lat,
+            incident_lon,
+            float(workshop.latitude),
+            float(workshop.longitude),
+        )
+        specialty_match = classification_matches_specialties(classification, workshop.specialties)
+        score = calculate_recommendation_score(distance_km, specialty_match, workshop.rating, priority_level)
+        if score > best_score:
+            best_score = score
+            best_workshop_id = workshop.id_user
+
+    if best_workshop_id is not None:
+        incident.assigned_workshop_id = best_workshop_id
+
+    return best_workshop_id

@@ -20,7 +20,7 @@ from app.modules.gestion_usuarios.services.technician_service import (
     update_technician,
     update_technician_availability,
 )
-from app.modules.gestion_usuarios.services.vehicle_service import create_vehicle, list_client_vehicles
+from app.modules.gestion_usuarios.services.vehicle_service import create_vehicle, list_client_vehicles, delete_vehicle
 from app.modules.gestion_usuarios.services.workshop_service import (
     create_workshop_account,
     delete_workshop_by_user_id,
@@ -60,4 +60,5 @@ __all__ = [
     "update_workshop_for_user",
     "upsert_workshop_for_user",
     "delete_workshop_by_user_id",
+    "delete_vehicle",
 ]

@@ -13,6 +13,7 @@ import 'package:movil/core/widgets/custom_button.dart';
 import 'package:movil/core/widgets/custom_input.dart';
 import 'package:movil/presentation/providers/report_provider.dart';
 import 'package:movil/presentation/pages/report/waiting_help_page.dart';
+import 'package:movil/presentation/pages/main_wrapper.dart';
 
 class MultimodalReportPage extends StatefulWidget {
   const MultimodalReportPage({super.key, required this.currentPosition, required this.vehicleId});
@@ -262,8 +263,9 @@ class _MultimodalReportPageState extends State<MultimodalReportPage> {
             content: Text('Reporte enviado correctamente.'),
           ),
         );
+      // Redirigir directamente al panel de Trazabilidad (Timeline)
       navigator.pushReplacement(
-        MaterialPageRoute(builder: (_) => const WaitingHelpPage()),
+        MaterialPageRoute(builder: (_) => const MainWrapper(initialIndex: 2)),
       );
       return;
     }

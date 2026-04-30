@@ -3,7 +3,10 @@ export interface AvailableRequestResponse {
   latitude: number;
   longitude: number;
   status: string;
+  description_text: string | null;
   created_at: string;
+  photo_url: string | null;
+  audio_url: string | null;
   client: {
     id_client: number;
     name: string;
@@ -16,6 +19,12 @@ export interface AvailableRequestResponse {
     year: number;
     color: string | null;
     license_plate: string;
+  } | null;
+  ai_analysis: {
+    audio_transcription: string | null;
+    classification: string | null;
+    priority_level: string | null;
+    structured_summary: string | null;
   } | null;
 }
 
@@ -62,13 +71,36 @@ export interface AssignmentTrackingResponse {
 export interface AssignmentHistoryItemResponse {
   id_assignment: number;
   id_incident: number;
-  id_workshop: number;
   status: string;
+  assignment_status: string;
+  incident_status: string;
   assigned_at: string;
   accepted_at: string | null;
   completed_at: string | null;
-  technician_name: string | null;
-  incident_description: string | null;
   client_name: string;
   vehicle_summary: string;
+  technician_name: string | null;
+  incident_description: string | null;
+  client?: {
+    id_client: number;
+    name: string;
+    phone: string | null;
+  } | null;
+  vehicle?: {
+    id_vehicle: number;
+    brand: string;
+    model: string;
+    year: number;
+    color: string | null;
+    license_plate: string;
+    plate?: string; // Add plate as alias for license_plate if needed
+  } | null;
+  ai_analysis?: {
+    audio_transcription?: string | null;
+    classification: string | null;
+    priority_level: string | null;
+    structured_summary: string | null;
+  } | null;
+  photo_url?: string | null;
+  audio_url?: string | null;
 }

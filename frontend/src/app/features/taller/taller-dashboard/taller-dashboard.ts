@@ -28,19 +28,24 @@ export class TallerDashboard implements OnInit {
 
   // Modals / Details
   isModalOpen = signal(false);
-  solicitudSeleccionada = signal<AvailableRequestResponse | null>(null);
+  solicitudSeleccionada = signal<any | null>(null);
+  isCaseActive = signal(false);
 
   // Tracking Active Case Details
   activeTracking = signal<{ [incidentId: number]: AssignmentTrackingResponse }>({});
+
+  // Mecanico for the evaluation modal
+  mecanicoModalSeleccionado = signal<number | null>(null);
 
   ngOnInit(): void {
     this.cargarNuevasSolicitudes();
     this.cargarCasosActivos();
     this.cargarTecnicos();
 
-    // Polling every 15 seconds to look for new assignments
+    // Polling every 15 seconds to look for new assignments and active case status changes
     setInterval(() => {
       this.cargarNuevasSolicitudes(true);
+      this.cargarCasosActivos(true);
     }, 15000);
   }
 
@@ -57,19 +62,24 @@ export class TallerDashboard implements OnInit {
       });
   }
 
-  cargarCasosActivos() {
-    this.isLoadingActivos.set(true);
+  cargarCasosActivos(isPolling = false) {
+    if (!isPolling) {
+      this.isLoadingActivos.set(true);
+    }
     // Fetch all history but filter out completed/cancelled/rejected in UI or backend
     this.opsService.getHistory()
       .pipe(finalize(() => this.isLoadingActivos.set(false)))
       .subscribe({
         next: (data) => {
+          console.log("Historial recibido:", data);
           const activos = data.filter(d => 
             d.status === 'aceptado' || 
             d.status === 'alistando' || 
             d.status === 'en_ruta' || 
-            d.status === 'en_sitio'
+            d.status === 'en_sitio' ||
+            d.status === 'completado'
           );
+          console.log("Casos activos filtrados:", activos);
           this.casosActivos.set(activos);
           // Load detailed tracking for each active case
           activos.forEach(caso => this.loadTrackingDetail(caso.id_incident));
@@ -92,23 +102,42 @@ export class TallerDashboard implements OnInit {
     });
   }
 
-  abrirEvaluacion(solicitud: AvailableRequestResponse) {
+  abrirEvaluacion(solicitud: any, isActive = false) {
     this.solicitudSeleccionada.set(solicitud);
+    this.isCaseActive.set(isActive);
+    this.mecanicoModalSeleccionado.set(null);
     this.isModalOpen.set(true);
   }
 
   cerrarModal() {
     this.isModalOpen.set(false);
     this.solicitudSeleccionada.set(null);
+    this.isCaseActive.set(false);
+    this.mecanicoModalSeleccionado.set(null);
   }
 
   decidirSolicitud(incidentId: number, decision: 'aceptado' | 'rechazado') {
+    if (decision === 'aceptado' && !this.mecanicoModalSeleccionado()) {
+      alert("Debes asignar un mecánico antes de aceptar el servicio.");
+      return;
+    }
+
     this.opsService.decideRequest(incidentId, decision).subscribe({
       next: () => {
-        this.cerrarModal();
-        this.cargarNuevasSolicitudes();
         if (decision === 'aceptado') {
-          this.cargarCasosActivos();
+          // Si se aceptó, inmediatamente encadenar la asignación del mecánico
+          const id_technician = this.mecanicoModalSeleccionado()!;
+          this.opsService.updateTracking(incidentId, { id_technician }).subscribe({
+            next: () => {
+              this.cerrarModal();
+              this.cargarNuevasSolicitudes();
+              this.cargarCasosActivos();
+            },
+            error: () => alert("Servicio aceptado, pero hubo un error al asignar el mecánico.")
+          });
+        } else {
+          this.cerrarModal();
+          this.cargarNuevasSolicitudes();
         }
       },
       error: (err) => alert("Error al procesar la solicitud.")

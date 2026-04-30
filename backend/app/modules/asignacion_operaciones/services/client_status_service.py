@@ -40,3 +40,22 @@ def get_client_incident_status(db: Session, incident: Incident) -> dict:
         if assignment and assignment.technician
         else None,
     }
+
+
+def update_client_incident_status(db: Session, incident: Incident, status: str) -> None:
+    if status.lower() not in {"finalizado", "cancelado"}:
+        raise ValueError("El cliente solo puede marcar el incidente como finalizado o cancelado.")
+    
+    incident.status = status.lower()
+    
+    # Si hay un assignment activo, deberia actualizarse tambien
+    assignment = db.scalar(
+        select(Assignment)
+        .where(Assignment.id_incident == incident.id_incident)
+        .order_by(Assignment.id_assignment.desc())
+    )
+    
+    if assignment and assignment.status not in {"cancelado", "completado", "finalizado", "rechazado"}:
+        assignment.status = "cancelado" if status.lower() == "cancelado" else status.lower()
+        
+    db.commit()

@@ -1,10 +1,16 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models import Client
-from app.modules.asignacion_operaciones.schemas import ClientIncidentStatusResponse
-from app.modules.asignacion_operaciones.services import get_client_incident_status
+from app.modules.gestion_usuarios.models.client import Client
+from app.modules.asignacion_operaciones.schemas import (
+    ClientIncidentStatusResponse,
+    ClientIncidentStatusUpdateRequest,
+)
+from app.modules.asignacion_operaciones.services import (
+    get_client_incident_status,
+    update_client_incident_status,
+)
 from app.shared.dependencies.auth import get_current_client, get_incident_owned_by_current_client
 
 router = APIRouter(prefix="/client/incidents", tags=["Client Incidents"])
@@ -28,3 +34,23 @@ def get_client_status(
 ) -> ClientIncidentStatusResponse:
     incident = get_incident_owned_by_current_client(db, current_client, incident_id)
     return ClientIncidentStatusResponse.model_validate(get_client_incident_status(db, incident))
+
+
+@router.patch(
+    "/{incident_id}/status",
+    response_model=dict,
+    responses=client_status_responses,
+)
+def patch_client_status(
+    incident_id: int,
+    data: ClientIncidentStatusUpdateRequest,
+    current_client: Client = Depends(get_current_client),
+    db: Session = Depends(get_db),
+) -> dict:
+    incident = get_incident_owned_by_current_client(db, current_client, incident_id)
+    try:
+        update_client_incident_status(db, incident, data.status)
+        return {"message": "Status updated successfully"}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+

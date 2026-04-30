@@ -5,15 +5,17 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
-from app.models import Assignment, Incident, Technician
+from app.modules.asignacion_operaciones.models.assignment import Assignment
+from app.modules.reporte_emergencias.models.incident import Incident
+from app.modules.gestion_usuarios.models.technician import Technician
 from app.modules.asignacion_operaciones.schemas import AssignmentTrackingUpdateRequest
 from app.modules.gestion_usuarios.services import create_notification
 
 TERMINAL_TRACKING_STATUSES = {"rechazado", "completado", "cancelado"}
 VALID_TRANSITIONS: dict[str, set[str]] = {
-    "aceptado": {"alistando", "cancelado"},
-    "alistando": {"en_ruta", "cancelado"},
-    "en_ruta": {"en_sitio", "cancelado"},
+    "aceptado": {"alistando", "en_ruta", "en_sitio", "completado", "cancelado"},
+    "alistando": {"en_ruta", "en_sitio", "completado", "cancelado"},
+    "en_ruta": {"en_sitio", "completado", "cancelado"},
     "en_sitio": {"completado", "cancelado"},
 }
 

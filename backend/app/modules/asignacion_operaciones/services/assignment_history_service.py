@@ -3,10 +3,21 @@ from datetime import datetime, time, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from app.models import Assignment, Incident
-from app.modules.asignacion_operaciones.schemas import AssignmentHistoryFilterParams
+from app.modules.asignacion_operaciones.models.assignment import Assignment
+from app.modules.reporte_emergencias.models.incident import Incident
+from app.modules.gestion_usuarios.models.client import Client
+from app.modules.asignacion_operaciones.schemas.assignment_history import AssignmentHistoryFilterParams
 
-DEFAULT_HISTORY_STATUSES = ("completado", "cancelado", "rechazado")
+DEFAULT_HISTORY_STATUSES = (
+    "aceptado",
+    "alistando",
+    "en_ruta",
+    "en_sitio",
+    "completado",
+    "finalizado",
+    "cancelado",
+    "rechazado",
+)
 
 
 def _base_history_query(workshop_id: int):
@@ -15,6 +26,9 @@ def _base_history_query(workshop_id: int):
         .options(
             joinedload(Assignment.incident).joinedload(Incident.vehicle),
             joinedload(Assignment.incident).joinedload(Incident.ai_analysis),
+            joinedload(Assignment.incident).joinedload(Incident.client).joinedload(Client.user),
+            joinedload(Assignment.incident).joinedload(Incident.photos),
+            joinedload(Assignment.incident).joinedload(Incident.audios),
             joinedload(Assignment.technician),
         )
         .where(Assignment.id_workshop == workshop_id)
@@ -47,9 +61,25 @@ def _serialize_history_item(assignment: Assignment) -> dict:
     ai_analysis = incident.ai_analysis
     technician = assignment.technician
 
+    # Get the most recent photo and audio safely
+    latest_photo = None
+    if incident.photos:
+        try:
+            latest_photo = max(incident.photos, key=lambda p: p.created_at if p.created_at else datetime.min)
+        except Exception:
+            latest_photo = incident.photos[0] if incident.photos else None
+
+    latest_audio = None
+    if incident.audios:
+        try:
+            latest_audio = max(incident.audios, key=lambda a: a.created_at if a.created_at else datetime.min)
+        except Exception:
+            latest_audio = incident.audios[0] if incident.audios else None
+
     return {
         "id_assignment": assignment.id_assignment,
         "id_incident": assignment.id_incident,
+        "status": assignment.status,
         "assignment_status": assignment.status,
         "incident_status": incident.status,
         "assigned_at": assignment.assigned_at,
@@ -59,8 +89,22 @@ def _serialize_history_item(assignment: Assignment) -> dict:
         "distance_km": assignment.distance_km,
         "service_price": assignment.service_price,
         "observations": assignment.observations,
+        "client_name": incident.client.user.name if incident.client and incident.client.user else "Desconocido",
+        "vehicle_summary": f"{incident.vehicle.brand} {incident.vehicle.model}" if incident.vehicle else "Vehículo",
+        "technician_name": technician.name if technician else "No asignado",
+        "incident_description": incident.description_text,
+        "photo_url": latest_photo.file_url if latest_photo else None,
+        "audio_url": latest_audio.file_url if latest_audio else None,
+        "client": {
+            "id_client": incident.client.user.id_user,
+            "name": incident.client.user.name,
+            "phone": incident.client.user.phone,
+        }
+        if incident.client and incident.client.user
+        else None,
         "vehicle": {
             "id_vehicle": incident.vehicle.id_vehicle,
+            "license_plate": incident.vehicle.plate,
             "plate": incident.vehicle.plate,
             "brand": incident.vehicle.brand,
             "model": incident.vehicle.model,
@@ -77,9 +121,10 @@ def _serialize_history_item(assignment: Assignment) -> dict:
         if technician
         else None,
         "ai_analysis": {
-            "classification": ai_analysis.classification,
-            "priority_level": ai_analysis.priority_level,
-            "structured_summary": ai_analysis.structured_summary,
+            "audio_transcription": getattr(ai_analysis, 'audio_transcription', None),
+            "classification": getattr(ai_analysis, 'classification', None),
+            "priority_level": getattr(ai_analysis, 'priority_level', None),
+            "structured_summary": getattr(ai_analysis, 'structured_summary', None),
         }
         if ai_analysis
         else None,
@@ -95,8 +140,17 @@ def list_workshop_history(
     stmt = _apply_history_filters(stmt, filters)
     stmt = stmt.order_by(Assignment.assigned_at.desc(), Assignment.id_assignment.desc())
 
-    assignments = list(db.scalars(stmt))
-    return [_serialize_history_item(assignment) for assignment in assignments]
+    assignments = list(db.scalars(stmt).unique())
+    serialized_items = []
+    for assignment in assignments:
+        try:
+            serialized_items.append(_serialize_history_item(assignment))
+        except (LookupError, AttributeError) as exc:
+            # Skip invalid assignments instead of crashing the entire list
+            print(f"Skipping assignment {assignment.id_assignment} due to error: {exc}")
+            continue
+            
+    return serialized_items
 
 
 def get_workshop_history_detail(db: Session, workshop_id: int, incident_id: int) -> dict:
@@ -105,7 +159,7 @@ def get_workshop_history_detail(db: Session, workshop_id: int, incident_id: int)
         .where(Assignment.id_incident == incident_id)
         .order_by(Assignment.id_assignment.desc())
     )
-    assignment = db.scalar(stmt)
+    assignment = db.scalars(stmt).unique().first()
     if not assignment:
         raise LookupError("No existe historial de atencion para ese incidente en este taller")
 

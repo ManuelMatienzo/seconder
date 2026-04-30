@@ -141,14 +141,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             const SizedBox(height: 12),
             Consumer<VehicleProvider>(
               builder: (context, vehicleProvider, _) {
-                final _vehicles = vehicleProvider.vehicles;
+                final vehicles = vehicleProvider.vehicles;
                 if (vehicleProvider.isLoading) {
                   return const SizedBox(
                     height: 110,
                     child: Center(child: CircularProgressIndicator()),
                   );
                 }
-                if (_vehicles.isEmpty) {
+                if (vehicles.isEmpty) {
                   return const SizedBox(
                     height: 110,
                     child: Center(child: Text('No tienes vehículos registrados.')),
@@ -158,9 +158,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   height: 110,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    itemCount: _vehicles.length,
+                    itemCount: vehicles.length,
                     itemBuilder: (context, index) {
-                      final vehicle = _vehicles[index];
+                      final vehicle = vehicles[index];
                       final isSelected = index == _selectedVehicleIndex;
                       return Padding(
                         padding: const EdgeInsets.only(right: 12),

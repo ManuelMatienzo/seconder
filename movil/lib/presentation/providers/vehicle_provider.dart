@@ -34,9 +34,14 @@ class VehicleProvider extends ChangeNotifier {
     }
   }
 
-  void removeVehicle(String id) {
-    _vehicles = _vehicles.where((v) => v.id != id).toList();
-    notifyListeners();
+  Future<void> removeVehicle(String id) async {
+    try {
+      await apiVehicleRepository.deleteVehicle(id);
+      _vehicles = _vehicles.where((v) => v.id != id).toList();
+      notifyListeners();
+    } catch (e) {
+      // Ignorar error por ahora
+    }
   }
 
   void updateVehicle(Vehicle updated) {

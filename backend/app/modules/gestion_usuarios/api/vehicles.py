@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models import Client
 from app.modules.gestion_usuarios.schemas import VehicleCreateRequest, VehicleResponse
-from app.modules.gestion_usuarios.services import create_vehicle, list_client_vehicles
+from app.modules.gestion_usuarios.services import create_vehicle, list_client_vehicles, delete_vehicle
 from app.shared.dependencies.auth import ensure_client_ownership, get_current_client
 
 router = APIRouter(tags=["Vehicles"])
@@ -51,3 +51,21 @@ def get_client_vehicles(
         return list_client_vehicles(db, client_id)
     except LookupError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.delete(
+    "/vehicles/{vehicle_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=protected_vehicle_responses,
+)
+def remove_vehicle(
+    vehicle_id: int,
+    current_client: Client = Depends(get_current_client),
+    db: Session = Depends(get_db),
+) -> None:
+    try:
+        delete_vehicle(db, current_client.id_user, vehicle_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc

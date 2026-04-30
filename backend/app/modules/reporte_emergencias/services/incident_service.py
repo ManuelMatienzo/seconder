@@ -10,6 +10,7 @@ from app.modules.reporte_emergencias.schemas import (
     IncidentPhotoCreateRequest,
 )
 from app.services.ai_service import AIService
+from app.modules.asignacion_operaciones.services.assignment_engine_service import auto_assign_workshop
 
 
 def create_incident(db: Session, client_id: int, data: IncidentCreateRequest) -> Incident:
@@ -54,6 +55,8 @@ def create_incident(db: Session, client_id: int, data: IncidentCreateRequest) ->
     try:
         db.flush()
         AIService().process_incident(db, incident)
+        # Asignación automática: selecciona el taller con mayor score (distancia + especialidad)
+        auto_assign_workshop(db, incident)
         db.commit()
     except (IntegrityError, ValueError) as exc:
         db.rollback()

@@ -9,6 +9,12 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthProvider>().currentUser;
+    final name = user?.name ?? 'Usuario';
+    final email = user?.email ?? 'Sin correo';
+    final phone = user?.phone ?? 'Sin teléfono';
+    final role = user?.role ?? 'CLIENTE';
+
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -33,9 +39,9 @@ class ProfilePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Juan Manuel',
-              style: TextStyle(
+            Text(
+              name,
+              style: const TextStyle(
                 color: AppColors.textMain,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -48,9 +54,9 @@ class ProfilePage extends StatelessWidget {
                 color: AppColors.primaryBlue.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text(
-                'CLIENTE VERIFICADO',
-                style: TextStyle(
+              child: Text(
+                role.toUpperCase(),
+                style: const TextStyle(
                   color: AppColors.primaryBlue,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
@@ -67,16 +73,16 @@ class ProfilePage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.borderSide, width: 1.5),
               ),
-              child: const Column(
+              child: Column(
                 children: [
                   _InfoTile(
                     icon: Icons.email_outlined,
-                    text: 'juan.manuel@example.com',
+                    text: email,
                   ),
-                  Divider(height: 1, color: AppColors.borderSide),
+                  const Divider(height: 1, color: AppColors.borderSide),
                   _InfoTile(
                     icon: Icons.phone_android_outlined,
-                    text: '+591 70000000',
+                    text: phone,
                   ),
                 ],
               ),

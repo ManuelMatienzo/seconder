@@ -4,9 +4,15 @@ from decimal import Decimal
 from app.schemas.common import ORMBaseModel
 
 
+class AvailableRequestClientResponse(ORMBaseModel):
+    id_client: int
+    name: str
+    phone: str | None = None
+
+
 class AvailableRequestVehicleResponse(ORMBaseModel):
     id_vehicle: int
-    plate: str
+    license_plate: str
     brand: str
     model: str
     year: int | None = None
@@ -31,5 +37,8 @@ class AvailableRequestResponse(ORMBaseModel):
     status: str
     created_at: datetime
     updated_at: datetime
+    photo_url: str | None = None
+    audio_url: str | None = None
+    client: AvailableRequestClientResponse | None = None
     vehicle: AvailableRequestVehicleResponse | None = None
     ai_analysis: AvailableRequestAiDataResponse | None = None

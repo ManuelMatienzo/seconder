@@ -120,4 +120,17 @@ class ApiEmergencyRepository implements EmergencyRepository {
     }
     return null;
   }
+
+  Future<void> updateTracking(int incidentId, String status) async {
+    final response = await http.patch(
+      Uri.parse('$baseUrl/client/incidents/$incidentId/status'),
+      headers: _headers,
+      body: jsonEncode({
+        'status': status,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Error al actualizar el estado del incidente');
+    }
+  }
 }

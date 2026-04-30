@@ -17,6 +17,7 @@ class Incident(Base):
     longitude: Mapped[Decimal] = mapped_column(Numeric(10, 7), nullable=False)
     description_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(30), nullable=False, server_default=text("'pendiente'"), index=True)
+    assigned_workshop_id: Mapped[int | None] = mapped_column(ForeignKey("workshops.id_user"), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
 

@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models import User
-from app.modules.asignacion_operaciones.schemas import AssignmentTrackingResponse, AssignmentTrackingUpdateRequest
-from app.modules.asignacion_operaciones.services import (
+from app.modules.gestion_usuarios.models.user import User
+from app.modules.asignacion_operaciones.schemas.assignment_tracking import AssignmentTrackingResponse, AssignmentTrackingUpdateRequest
+from app.modules.asignacion_operaciones.services.assignment_tracking_service import (
     AssignmentTrackingConflictError,
     get_assignment_tracking,
     update_assignment_tracking,

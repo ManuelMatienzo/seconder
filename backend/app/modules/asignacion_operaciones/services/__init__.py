@@ -17,7 +17,10 @@ from app.modules.asignacion_operaciones.services.assignment_tracking_service imp
     update_assignment_tracking,
 )
 from app.modules.asignacion_operaciones.services.available_request_service import list_available_requests
-from app.modules.asignacion_operaciones.services.client_status_service import get_client_incident_status
+from app.modules.asignacion_operaciones.services.client_status_service import (
+    get_client_incident_status,
+    update_client_incident_status,
+)
 
 __all__ = [
     "AssignmentConflictError",
@@ -31,4 +34,5 @@ __all__ = [
     "list_available_requests",
     "run_assignment_engine",
     "update_assignment_tracking",
+    "update_client_incident_status",
 ]

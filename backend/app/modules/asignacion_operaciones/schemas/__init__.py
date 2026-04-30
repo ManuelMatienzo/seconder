@@ -30,6 +30,7 @@ from app.modules.asignacion_operaciones.schemas.assignment_decision import (
 from app.modules.asignacion_operaciones.schemas.client_status import (
     ClientIncidentStatusResponse,
     ClientIncidentStatusTechnicianResponse,
+    ClientIncidentStatusUpdateRequest,
     ClientIncidentStatusWorkshopResponse,
 )
 
@@ -54,5 +55,6 @@ __all__ = [
     "AssignmentTrackingWorkshopResponse",
     "ClientIncidentStatusResponse",
     "ClientIncidentStatusTechnicianResponse",
+    "ClientIncidentStatusUpdateRequest",
     "ClientIncidentStatusWorkshopResponse",
 ]

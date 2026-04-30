@@ -42,4 +42,9 @@ class ReportProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void clearActiveIncident() {
+    _activeIncidentId = null;
+    notifyListeners();
+  }
 }

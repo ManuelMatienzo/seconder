@@ -9,6 +9,10 @@ class ClientIncidentStatusWorkshopResponse(ORMBaseModel):
     phone: str | None = None
 
 
+class ClientIncidentStatusUpdateRequest(ORMBaseModel):
+    status: str
+
+
 class ClientIncidentStatusTechnicianResponse(ORMBaseModel):
     id_technician: int
     name: str

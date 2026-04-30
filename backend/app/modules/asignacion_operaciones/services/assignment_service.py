@@ -59,12 +59,14 @@ def decide_available_request(
         assignment.accepted_at = None
         if assignment.assigned_at is None:
             assignment.assigned_at = now
-        incident.status = "pendiente"
+        # Al rechazar, cancelamos la emergencia para que el flujo termine
+        incident.status = "cancelado"
+        incident.assigned_workshop_id = None
         create_notification(
             db,
             incident.id_client,
             "Solicitud rechazada",
-            "Un taller rechazo tu solicitud de asistencia. El incidente sigue disponible.",
+            "Un taller rechazo tu solicitud de asistencia. La solicitud ha sido cancelada.",
             "assignment",
         )
 

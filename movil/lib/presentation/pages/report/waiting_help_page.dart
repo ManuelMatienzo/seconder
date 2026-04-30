@@ -5,6 +5,7 @@ import 'package:movil/core/theme/app_colors.dart';
 import 'package:movil/core/widgets/custom_button.dart';
 import 'package:movil/presentation/providers/report_provider.dart';
 import 'package:movil/data/repositories/api_emergency_repository.dart';
+import 'package:movil/data/repositories/api_auth_repository.dart';
 import 'package:movil/presentation/pages/main_wrapper.dart';
 
 class WaitingHelpPage extends StatefulWidget {
@@ -24,25 +25,49 @@ class _WaitingHelpPageState extends State<WaitingHelpPage> {
   }
 
   void _startPolling() {
-    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
       final incidentId = context.read<ReportProvider>().activeIncidentId;
-      if (incidentId == null) return;
+      if (incidentId == null) {
+        _pollingTimer?.cancel();
+        return;
+      }
+
+      // Guardia: no hay token → no llamar al backend
+      if (ApiAuthRepository.accessToken == null) {
+        _pollingTimer?.cancel();
+        return;
+      }
 
       final repo = ApiEmergencyRepository();
       final data = await repo.checkIncidentStatus(incidentId);
 
       if (data != null && mounted) {
-        final status = data['status'] as String? ?? 'REPORTADO';
-        if (status.toUpperCase() != 'REPORTADO') {
-          // Si ya no está en estado "REPORTADO", significa que alguien lo tomó o avanzó
+        final status = data['status'] as String? ?? 'pendiente';
+        // Si el incidente ya fue tomado por un taller (no está pendiente), ir a trazabilidad
+        if (status.toLowerCase() != 'pendiente') {
           _pollingTimer?.cancel();
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const MainWrapper(initialIndex: 2), // Tab de emergencia
-            ),
-            (route) => false,
-          );
+          
+          if (status.toLowerCase() == 'cancelado' || status.toLowerCase() == 'rechazado') {
+            context.read<ReportProvider>().clearActiveIncident();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('No se encontró un taller disponible o la solicitud fue rechazada.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const MainWrapper(initialIndex: 0)),
+              (route) => false,
+            );
+          } else {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const MainWrapper(initialIndex: 2)),
+              (route) => false,
+            );
+          }
         }
       }
     });
