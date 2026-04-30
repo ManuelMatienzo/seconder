@@ -42,6 +42,7 @@ class AssignmentHistoryItemResponse(ORMBaseModel):
     distance_km: Decimal | None = None
     service_price: Decimal | None = None
     observations: str | None = None
+    payment_status: str | None = None
     client_name: str | None = None
     vehicle_summary: str | None = None
     technician_name: str | None = None

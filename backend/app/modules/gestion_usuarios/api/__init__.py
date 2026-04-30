@@ -12,6 +12,7 @@ from app.modules.gestion_usuarios.api import (
     users,
     vehicles,
     workshops,
+    ws_notifications,
 )
 
 router = APIRouter()
@@ -26,5 +27,6 @@ router.include_router(vehicles.router)
 router.include_router(workshops.router)
 router.include_router(roles.router)
 router.include_router(users.router)
+router.include_router(ws_notifications.router)
 
 __all__ = ["router"]

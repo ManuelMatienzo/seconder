@@ -17,7 +17,10 @@ class ApiEmergencyRepository implements EmergencyRepository {
 
   @override
   Future<List<EmergencyCaseEntity>> getActiveCases() async {
-    final response = await http.get(Uri.parse('$baseUrl/incidents/active'), headers: _headers);
+    final response = await http.get(
+      Uri.parse('$baseUrl/incidents/active'),
+      headers: _headers,
+    );
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
       return data.map((e) => EmergencyCaseModel.fromJson(e)).toList();
@@ -38,7 +41,7 @@ class ApiEmergencyRepository implements EmergencyRepository {
     request.files.add(await http.MultipartFile.fromPath('file', filePath));
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
-    
+
     if (response.statusCode == 201) {
       final data = jsonDecode(response.body);
       return data['file_url'];
@@ -56,7 +59,25 @@ class ApiEmergencyRepository implements EmergencyRepository {
     // 1. Obtener ubicacion actual
     Position position = await Geolocator.getCurrentPosition();
 
-    // 2. Crear incidente
+    // 2. Subir evidencia primero para adjuntarla al crear el incidente
+    final List<Map<String, dynamic>> photos = [];
+    final List<Map<String, dynamic>> audios = [];
+
+    if (imagePath != null) {
+      final photoUrl = await _uploadFile(imagePath);
+      if (photoUrl != null) {
+        photos.add({'file_url': photoUrl});
+      }
+    }
+
+    if (audioPath != null) {
+      final audioUrl = await _uploadFile(audioPath);
+      if (audioUrl != null) {
+        audios.add({'file_url': audioUrl});
+      }
+    }
+
+    // 3. Crear incidente con evidencias (si existen)
     final incidentResponse = await http.post(
       Uri.parse('$baseUrl/incidents'),
       headers: _headers,
@@ -65,8 +86,8 @@ class ApiEmergencyRepository implements EmergencyRepository {
         'latitude': position.latitude,
         'longitude': position.longitude,
         'description_text': optionalText,
-        'photos': [],
-        'audios': []
+        'photos': photos,
+        'audios': audios,
       }),
     );
 
@@ -75,38 +96,7 @@ class ApiEmergencyRepository implements EmergencyRepository {
     }
 
     final incidentData = jsonDecode(incidentResponse.body);
-    final incidentId = incidentData['id_incident'];
-
-    if (imagePath != null) {
-      final photoUrl = await _uploadFile(imagePath);
-      if (photoUrl != null) {
-        await http.post(
-          Uri.parse('$baseUrl/incident-photos'),
-          headers: _headers,
-          body: jsonEncode({
-            'id_incident': incidentId,
-            'file_url': photoUrl,
-          }),
-        );
-      }
-    }
-
-    // 4. Subir y adjuntar audio
-    if (audioPath != null) {
-      final audioUrl = await _uploadFile(audioPath);
-      if (audioUrl != null) {
-        await http.post(
-          Uri.parse('$baseUrl/incident-audios'),
-          headers: _headers,
-          body: jsonEncode({
-            'id_incident': incidentId,
-            'file_url': audioUrl,
-          }),
-        );
-      }
-    }
-
-    return incidentId;
+    return incidentData['id_incident'];
   }
 
   Future<Map<String, dynamic>?> checkIncidentStatus(int incidentId) async {
@@ -125,12 +115,29 @@ class ApiEmergencyRepository implements EmergencyRepository {
     final response = await http.patch(
       Uri.parse('$baseUrl/client/incidents/$incidentId/status'),
       headers: _headers,
-      body: jsonEncode({
-        'status': status,
-      }),
+      body: jsonEncode({'status': status}),
     );
     if (response.statusCode != 200) {
       throw Exception('Error al actualizar el estado del incidente');
+    }
+  }
+
+  Future<void> payIncident(
+    int incidentId,
+    double amount,
+    String paymentMethod,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/client/incidents/$incidentId/pay'),
+      headers: _headers,
+      body: jsonEncode({
+        'total_amount': amount,
+        'payment_method': paymentMethod,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Error al procesar el pago');
     }
   }
 }

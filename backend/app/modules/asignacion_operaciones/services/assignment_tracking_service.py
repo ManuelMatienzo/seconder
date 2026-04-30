@@ -11,7 +11,7 @@ from app.modules.gestion_usuarios.models.technician import Technician
 from app.modules.asignacion_operaciones.schemas import AssignmentTrackingUpdateRequest
 from app.modules.gestion_usuarios.services import create_notification
 
-TERMINAL_TRACKING_STATUSES = {"rechazado", "completado", "cancelado"}
+TERMINAL_TRACKING_STATUSES = {"rechazado", "completado", "cancelado", "finalizado"}
 VALID_TRANSITIONS: dict[str, set[str]] = {
     "aceptado": {"alistando", "en_ruta", "en_sitio", "completado", "cancelado"},
     "alistando": {"en_ruta", "en_sitio", "completado", "cancelado"},
@@ -149,25 +149,26 @@ def update_assignment_tracking(
         next_technician.is_available = False
 
     if data.status is not None:
-        ensure_valid_transition(assignment.status, data.status)
-        assignment.status = data.status
+        next_status = "en_ruta" if data.status == "en_camino" else data.status
+        ensure_valid_transition(assignment.status, next_status)
+        assignment.status = next_status
 
-        if data.status == "en_ruta" and assignment.id_technician is None:
+        if next_status == "en_ruta" and assignment.id_technician is None:
             raise AssignmentTrackingConflictError("Debes asignar un tecnico antes de marcar el servicio como en_ruta")
 
-        if data.status == "completado":
+        if next_status == "completado":
             assignment.completed_at = now
             if next_technician:
                 next_technician.is_available = True
-        elif data.status == "cancelado":
+        elif next_status == "cancelado":
             if next_technician:
                 next_technician.is_available = True
-        elif data.status == "aceptado" and assignment.accepted_at is None:
+        elif next_status == "aceptado" and assignment.accepted_at is None:
             assignment.accepted_at = now
 
         reflect_incident_status_from_assignment(assignment.status, incident)
 
-        if data.status == "en_ruta":
+        if next_status == "en_ruta":
             create_notification(
                 db,
                 incident.id_client,
@@ -175,7 +176,7 @@ def update_assignment_tracking(
                 "El tecnico ya esta en ruta hacia tu ubicacion.",
                 "tracking",
             )
-        elif data.status == "en_sitio":
+        elif next_status == "en_sitio":
             create_notification(
                 db,
                 incident.id_client,
@@ -183,7 +184,7 @@ def update_assignment_tracking(
                 "El tecnico ha llegado a tu ubicacion.",
                 "tracking",
             )
-        elif data.status == "completado":
+        elif next_status == "completado":
             create_notification(
                 db,
                 incident.id_client,

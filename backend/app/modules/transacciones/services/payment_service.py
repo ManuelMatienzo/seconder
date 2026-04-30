@@ -26,12 +26,12 @@ def create_incident_payment(
     if not assignment:
         raise LookupError("No existe una atencion registrada para ese incidente")
 
-    if assignment.status != "completado":
+    if assignment.status not in {"completado", "finalizado"}:
         raise PermissionError("El servicio aun no esta completado y no puede pagarse")
 
     existing_payment = db.scalar(select(Payment).where(Payment.id_assignment == assignment.id_assignment))
     if existing_payment:
-        raise FileExistsError("El servicio ya fue pagado")
+        return existing_payment
 
     platform_commission = (data.total_amount * COMMISSION_RATE).quantize(
         MONEY_QUANTIZER,

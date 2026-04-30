@@ -2,6 +2,8 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
+from anyio import from_thread
+
 from app.models import Incident, IncidentAudio, IncidentPhoto, Vehicle
 from app.modules.reporte_emergencias.schemas import (
     IncidentAudioCreateRequest,
@@ -11,6 +13,8 @@ from app.modules.reporte_emergencias.schemas import (
 )
 from app.services.ai_service import AIService
 from app.modules.asignacion_operaciones.services.assignment_engine_service import auto_assign_workshop
+from app.modules.gestion_usuarios.services import create_notification
+from app.shared.realtime import notification_manager
 
 
 def create_incident(db: Session, client_id: int, data: IncidentCreateRequest) -> Incident:
@@ -56,7 +60,27 @@ def create_incident(db: Session, client_id: int, data: IncidentCreateRequest) ->
         db.flush()
         AIService().process_incident(db, incident)
         # Asignación automática: selecciona el taller con mayor score (distancia + especialidad)
-        auto_assign_workshop(db, incident)
+        assigned_workshop_id = auto_assign_workshop(db, incident)
+        if assigned_workshop_id:
+            create_notification(
+                db,
+                assigned_workshop_id,
+                "Nueva solicitud",
+                "Tienes una nueva solicitud de asistencia.",
+                "assignment",
+            )
+            try:
+                from_thread.run(
+                    notification_manager.send_to_user,
+                    assigned_workshop_id,
+                    {
+                        "type": "new_request",
+                        "incident_id": incident.id_incident,
+                        "client_name": vehicle.client.user.name if vehicle.client and vehicle.client.user else None,
+                    },
+                )
+            except Exception:
+                pass
         db.commit()
     except (IntegrityError, ValueError) as exc:
         db.rollback()

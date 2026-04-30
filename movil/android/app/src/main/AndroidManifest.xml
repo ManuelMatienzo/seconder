@@ -2,6 +2,8 @@
 
     <!-- Cámara: requerido para capturar foto del daño vehicular -->
     <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Internet: requerido para consumir la API en produccion -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Almacenamiento (Android ≤ 12): acceso a archivos de imagen -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32"/>
@@ -44,7 +46,7 @@
             android:value="2" />
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AQUI_VA_TU_API_KEY_DE_GOOGLE"/>
+            android:value="${MAPS_API_KEY}"/>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

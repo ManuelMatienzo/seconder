@@ -37,7 +37,15 @@ class AssignmentTrackingResponse(ORMBaseModel):
 
 
 class AssignmentTrackingUpdateRequest(ORMBaseModel):
-    status: Literal["aceptado", "en_camino", "completado", "cancelado"] | None = None
+    status: Literal[
+        "aceptado",
+        "alistando",
+        "en_ruta",
+        "en_sitio",
+        "completado",
+        "cancelado",
+        "en_camino",
+    ] | None = None
     id_technician: int | None = None
     estimated_time_min: int | None = None
     distance_km: Decimal | None = None

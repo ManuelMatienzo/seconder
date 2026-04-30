@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from app.models import Assignment, Incident
+from app.models import Assignment, Incident, Workshop
 
 
 def get_client_incident_status(db: Session, incident: Incident) -> dict:
@@ -17,6 +17,10 @@ def get_client_incident_status(db: Session, incident: Incident) -> dict:
 
     ai_analysis = incident.ai_analysis
 
+    workshop = assignment.workshop if assignment and assignment.workshop else None
+    if workshop is None and incident.assigned_workshop_id is not None:
+        workshop = db.get(Workshop, incident.assigned_workshop_id)
+
     return {
         "id_incident": incident.id_incident,
         "incident_status": incident.status,
@@ -25,11 +29,11 @@ def get_client_incident_status(db: Session, incident: Incident) -> dict:
         "estimated_time_min": assignment.estimated_time_min if assignment else None,
         "distance_km": assignment.distance_km if assignment else None,
         "workshop": {
-            "id_workshop": assignment.workshop.id_user,
-            "workshop_name": assignment.workshop.workshop_name,
-            "phone": assignment.workshop.phone,
+            "id_workshop": workshop.id_user,
+            "workshop_name": workshop.workshop_name,
+            "phone": workshop.phone,
         }
-        if assignment and assignment.workshop
+        if workshop
         else None,
         "technician": {
             "id_technician": assignment.technician.id_technician,
@@ -43,10 +47,16 @@ def get_client_incident_status(db: Session, incident: Incident) -> dict:
 
 
 def update_client_incident_status(db: Session, incident: Incident, status: str) -> None:
-    if status.lower() not in {"finalizado", "cancelado"}:
+    normalized_status = status.lower()
+    if normalized_status not in {"finalizado", "cancelado"}:
         raise ValueError("El cliente solo puede marcar el incidente como finalizado o cancelado.")
-    
-    incident.status = status.lower()
+
+    # Evitar violar el constraint de estados en incidentes.
+    # 'finalizado' es solo para el assignment (flujo post-pago).
+    if normalized_status == "finalizado":
+        incident.status = "atendido"
+    else:
+        incident.status = normalized_status
     
     # Si hay un assignment activo, deberia actualizarse tambien
     assignment = db.scalar(
@@ -55,7 +65,8 @@ def update_client_incident_status(db: Session, incident: Incident, status: str) 
         .order_by(Assignment.id_assignment.desc())
     )
     
-    if assignment and assignment.status not in {"cancelado", "completado", "finalizado", "rechazado"}:
-        assignment.status = "cancelado" if status.lower() == "cancelado" else status.lower()
+    if assignment:
+        if normalized_status != "finalizado" and assignment.status not in {"cancelado", "completado", "rechazado"}:
+            assignment.status = "cancelado" if normalized_status == "cancelado" else normalized_status
         
     db.commit()

@@ -7,6 +7,7 @@ from app.modules.asignacion_operaciones.models.assignment import Assignment
 from app.modules.reporte_emergencias.models.incident import Incident
 from app.modules.gestion_usuarios.models.client import Client
 from app.modules.asignacion_operaciones.schemas.assignment_history import AssignmentHistoryFilterParams
+from app.modules.transacciones.models.payment import Payment
 
 DEFAULT_HISTORY_STATUSES = (
     "aceptado",
@@ -53,7 +54,7 @@ def _apply_history_filters(stmt, filters: AssignmentHistoryFilterParams):
     return stmt
 
 
-def _serialize_history_item(assignment: Assignment) -> dict:
+def _serialize_history_item(assignment: Assignment, payment: Payment | None) -> dict:
     incident = assignment.incident
     if incident is None or incident.vehicle is None:
         raise LookupError("El assignment no tiene incidente o vehiculo asociado valido")
@@ -89,6 +90,7 @@ def _serialize_history_item(assignment: Assignment) -> dict:
         "distance_km": assignment.distance_km,
         "service_price": assignment.service_price,
         "observations": assignment.observations,
+        "payment_status": payment.payment_status if payment else None,
         "client_name": incident.client.user.name if incident.client and incident.client.user else "Desconocido",
         "vehicle_summary": f"{incident.vehicle.brand} {incident.vehicle.model}" if incident.vehicle else "Vehículo",
         "technician_name": technician.name if technician else "No asignado",
@@ -141,10 +143,20 @@ def list_workshop_history(
     stmt = stmt.order_by(Assignment.assigned_at.desc(), Assignment.id_assignment.desc())
 
     assignments = list(db.scalars(stmt).unique())
+    payments_by_assignment: dict[int, Payment] = {}
+    if assignments:
+        assignment_ids = [assignment.id_assignment for assignment in assignments]
+        payments = list(
+            db.scalars(select(Payment).where(Payment.id_assignment.in_(assignment_ids)))
+        )
+        payments_by_assignment = {payment.id_assignment: payment for payment in payments}
+
     serialized_items = []
     for assignment in assignments:
         try:
-            serialized_items.append(_serialize_history_item(assignment))
+            serialized_items.append(
+                _serialize_history_item(assignment, payments_by_assignment.get(assignment.id_assignment))
+            )
         except (LookupError, AttributeError) as exc:
             # Skip invalid assignments instead of crashing the entire list
             print(f"Skipping assignment {assignment.id_assignment} due to error: {exc}")
@@ -162,5 +174,5 @@ def get_workshop_history_detail(db: Session, workshop_id: int, incident_id: int)
     assignment = db.scalars(stmt).unique().first()
     if not assignment:
         raise LookupError("No existe historial de atencion para ese incidente en este taller")
-
-    return _serialize_history_item(assignment)
+    payment = db.scalar(select(Payment).where(Payment.id_assignment == assignment.id_assignment))
+    return _serialize_history_item(assignment, payment)

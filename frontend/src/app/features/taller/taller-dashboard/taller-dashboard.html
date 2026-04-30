@@ -1,4 +1,16 @@
 <div class="space-y-8 max-w-4xl mx-auto font-sans relative pb-12">
+
+  @if (toastMessage()) {
+    <div class="fixed top-5 right-5 z-[120]">
+      <div class="flex items-center gap-4 rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 shadow-xl">
+        <span class="w-3.5 h-3.5 rounded-full bg-amber-500 animate-pulse"></span>
+        <div>
+          <p class="text-[11px] font-bold text-amber-700 uppercase tracking-widest">Notificacion</p>
+          <p class="text-base font-extrabold text-gray-900">{{ toastMessage() }}</p>
+        </div>
+      </div>
+    </div>
+  }
   
   <div class="flex items-center justify-between mb-8">
     <div>

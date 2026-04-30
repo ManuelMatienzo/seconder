@@ -74,6 +74,7 @@ export interface AssignmentHistoryItemResponse {
   status: string;
   assignment_status: string;
   incident_status: string;
+  payment_status?: string | null;
   assigned_at: string;
   accepted_at: string | null;
   completed_at: string | null;

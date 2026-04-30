@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
@@ -7,6 +7,7 @@ import { OperationsService } from '../../../services/operations.service';
 import { TechnicianService } from '../../../services/technician.service';
 import { AvailableRequestResponse, AssignmentHistoryItemResponse, AssignmentTrackingResponse } from '../../../models/operations';
 import { TechnicianResponse } from '../../../models/technician';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-taller-dashboard',
@@ -14,9 +15,12 @@ import { TechnicianResponse } from '../../../models/technician';
   imports: [CommonModule, FormsModule],
   templateUrl: './taller-dashboard.html'
 })
-export class TallerDashboard implements OnInit {
+export class TallerDashboard implements OnInit, OnDestroy {
   private opsService = inject(OperationsService);
   private techService = inject(TechnicianService);
+  private realtimeSocket?: WebSocket;
+  private reconnectTimer?: number;
+  private toastTimer?: number;
 
   // States
   nuevasSolicitudes = signal<AvailableRequestResponse[]>([]);
@@ -31,6 +35,9 @@ export class TallerDashboard implements OnInit {
   solicitudSeleccionada = signal<any | null>(null);
   isCaseActive = signal(false);
 
+  // Toast
+  toastMessage = signal<string | null>(null);
+
   // Tracking Active Case Details
   activeTracking = signal<{ [incidentId: number]: AssignmentTrackingResponse }>({});
 
@@ -41,12 +48,18 @@ export class TallerDashboard implements OnInit {
     this.cargarNuevasSolicitudes();
     this.cargarCasosActivos();
     this.cargarTecnicos();
+    this.startRealtime();
 
     // Polling every 15 seconds to look for new assignments and active case status changes
     setInterval(() => {
       this.cargarNuevasSolicitudes(true);
       this.cargarCasosActivos(true);
     }, 15000);
+  }
+
+  ngOnDestroy(): void {
+    this.stopRealtime();
+    this.clearToastTimer();
   }
 
   cargarNuevasSolicitudes(isPolling = false) {
@@ -72,13 +85,13 @@ export class TallerDashboard implements OnInit {
       .subscribe({
         next: (data) => {
           console.log("Historial recibido:", data);
-          const activos = data.filter(d => 
+          const activos = data.filter(d => (
             d.status === 'aceptado' || 
             d.status === 'alistando' || 
             d.status === 'en_ruta' || 
             d.status === 'en_sitio' ||
             d.status === 'completado'
-          );
+          ) && d.payment_status !== 'completado');
           console.log("Casos activos filtrados:", activos);
           this.casosActivos.set(activos);
           // Load detailed tracking for each active case
@@ -173,5 +186,67 @@ export class TallerDashboard implements OnInit {
         }
       }
     });
+  }
+
+  private startRealtime() {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      return;
+    }
+
+    const wsUrl = this.buildWsUrl(`${environment.apiUrl}/ws/notifications?token=${token}`);
+    this.realtimeSocket = new WebSocket(wsUrl);
+
+    this.realtimeSocket.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload.type === 'new_request') {
+          this.cargarNuevasSolicitudes(true);
+          const clientName = payload.client_name as string | undefined;
+          const message = clientName
+            ? `Nueva solicitud de ${clientName}`
+            : 'Nueva solicitud recibida';
+          this.showToast(message);
+        }
+      } catch {
+        // Ignorar mensajes no JSON
+      }
+    };
+
+    this.realtimeSocket.onerror = () => {
+      this.realtimeSocket?.close();
+    };
+
+    this.realtimeSocket.onclose = () => {
+      this.reconnectTimer = window.setTimeout(() => this.startRealtime(), 3000);
+    };
+  }
+
+  private stopRealtime() {
+    if (this.reconnectTimer) {
+      window.clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = undefined;
+    }
+    this.realtimeSocket?.close();
+    this.realtimeSocket = undefined;
+  }
+
+  private buildWsUrl(url: string): string {
+    return url.replace(/^http/, 'ws');
+  }
+
+  private showToast(message: string) {
+    this.toastMessage.set(message);
+    this.clearToastTimer();
+    this.toastTimer = window.setTimeout(() => {
+      this.toastMessage.set(null);
+    }, 3500);
+  }
+
+  private clearToastTimer() {
+    if (this.toastTimer) {
+      window.clearTimeout(this.toastTimer);
+      this.toastTimer = undefined;
+    }
   }
 }

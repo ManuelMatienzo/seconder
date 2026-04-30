@@ -43,28 +43,35 @@ class _WaitingHelpPageState extends State<WaitingHelpPage> {
       final data = await repo.checkIncidentStatus(incidentId);
 
       if (data != null && mounted) {
-        final status = data['status'] as String? ?? 'pendiente';
+        final status = data['incident_status'] as String? ?? 'pendiente';
         // Si el incidente ya fue tomado por un taller (no está pendiente), ir a trazabilidad
         if (status.toLowerCase() != 'pendiente') {
           _pollingTimer?.cancel();
-          
-          if (status.toLowerCase() == 'cancelado' || status.toLowerCase() == 'rechazado') {
+
+          if (status.toLowerCase() == 'cancelado' ||
+              status.toLowerCase() == 'rechazado') {
             context.read<ReportProvider>().clearActiveIncident();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('No se encontró un taller disponible o la solicitud fue rechazada.'),
+                content: Text(
+                  'No se encontró un taller disponible o la solicitud fue rechazada.',
+                ),
                 backgroundColor: Colors.red,
               ),
             );
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (_) => const MainWrapper(initialIndex: 0)),
+              MaterialPageRoute(
+                builder: (_) => const MainWrapper(initialIndex: 0),
+              ),
               (route) => false,
             );
           } else {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (_) => const MainWrapper(initialIndex: 2)),
+              MaterialPageRoute(
+                builder: (_) => const MainWrapper(initialIndex: 2),
+              ),
               (route) => false,
             );
           }
@@ -81,9 +88,9 @@ class _WaitingHelpPageState extends State<WaitingHelpPage> {
 
   void _cancelRequest() {
     // Aquí se llamaría a la API para cancelar
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Solicitud cancelada')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Solicitud cancelada')));
     Navigator.popUntil(context, (route) => route.isFirst);
   }
 
@@ -111,10 +118,7 @@ class _WaitingHelpPageState extends State<WaitingHelpPage> {
               const Text(
                 'Estamos buscando el taller más cercano a tu ubicación. Por favor espera.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.textMuted,
-                ),
+                style: TextStyle(fontSize: 16, color: AppColors.textMuted),
               ),
               const SizedBox(height: 48),
               CustomButton(
